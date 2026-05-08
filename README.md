@@ -4,7 +4,7 @@
 
 A browser-based tool for mapping grind settings between hand grinders. Dial in a click count on one grinder and see the equivalent setting on another, based on each grinder's microns-per-click and zero-offset values. Includes brew method presets (V60, Espresso, AeroPress, Moka, Chemex, French Press, Cold Brew) with highlighted recommended ranges and haptic-style click audio feedback.
 
-No build step required — open `index.html` directly or host on GitHub Pages.
+**[Use it here](https://kenneth.dsouza.im/grinder-calibrator/)**
 
 ## Supported grinders
 
