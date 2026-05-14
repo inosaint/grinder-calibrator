@@ -862,9 +862,26 @@
         audioRef.current.enabled = soundOn;
       }, [soundOn]);
 
+      useEffect(() => {
+        const t = setTimeout(() => {
+          posthog.capture('grind_mapped', {
+            source_grinder_id: leftId,
+            source_grinder_name: `${leftGrinder.name} ${leftGrinder.model}`.trim(),
+            source_click: leftClick,
+            target_grinder_id: rightId,
+            target_grinder_name: `${rightGrinder.name} ${rightGrinder.model}`.trim(),
+            target_click: rightClick,
+            method_id: methodId,
+            mapping_pair: `${leftId}→${rightId}`,
+          });
+        }, 1200);
+        return () => clearTimeout(t);
+      }, [leftId, rightId, leftClick, rightClick, methodId]);
+
       const handleLeftGrinderChange = (newId) => {
         const oldGrinder = GRINDERS[leftId];
         const newGrinder = GRINDERS[newId];
+        posthog.capture('grinder_selected', { side: 'source', grinder_id: newId, grinder_name: newGrinder.name, grinder_model: newGrinder.model });
         syncingRef.current = true;
         setLeftId(newId);
         const remapped = mapClicks(oldGrinder, newGrinder, leftClick, methodId);
@@ -877,6 +894,7 @@
       const handleRightGrinderChange = (newId) => {
         const oldGrinder = GRINDERS[rightId];
         const newGrinder = GRINDERS[newId];
+        posthog.capture('grinder_selected', { side: 'target', grinder_id: newId, grinder_name: newGrinder.name, grinder_model: newGrinder.model });
         syncingRef.current = true;
         setRightId(newId);
         const remapped = mapClicks(oldGrinder, newGrinder, rightClick, methodId);
@@ -907,6 +925,8 @@
       };
 
       const handleMethodChange = (id) => {
+        const label = METHODS.find((m) => m.id === id)?.label || id;
+        posthog.capture('method_selected', { method_id: id, method_label: label });
         setMethodId(id);
         const lr = getMethodClickRange(leftGrinder, id);
         const rr = getMethodClickRange(rightGrinder, id);
@@ -926,6 +946,16 @@
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         };
         setHistory((h) => [snap, ...h].slice(0, 8));
+        posthog.capture('snapshot_saved', {
+          source_grinder_id: leftId,
+          source_grinder_name: `${leftGrinder.name} ${leftGrinder.model}`.trim(),
+          source_click: leftClick,
+          target_grinder_id: rightId,
+          target_grinder_name: `${rightGrinder.name} ${rightGrinder.model}`.trim(),
+          target_click: rightClick,
+          method_id: methodId,
+          mapping_pair: `${leftId}→${rightId}`,
+        });
         audioRef.current.click('snap');
       };
 
@@ -1173,11 +1203,11 @@
 
             <div className="mt-16 mb-1 text-center text-[10px] leading-relaxed text-stone-600"
               style={{ fontFamily: '"DM Mono", monospace', letterSpacing: '0.05em' }}>
-              Ranges are adapted from <a href="https://honestcoffeeguide.com/" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline', textUnderlineOffset: '2px' }}>Honest Coffee Guide</a> community brew charts, not manufacturer µm/click specs. Different grinder designs measure different things — the mapping gives you a calibrated starting point, not a physical equivalent.
+              Ranges are adapted from <a href="https://honestcoffeeguide.com/" target="_blank" rel="noopener noreferrer" onClick={() => posthog.capture('link_clicked', { label: 'Honest Coffee Guide', href: 'https://honestcoffeeguide.com/' })} style={{ color: 'inherit', textDecoration: 'underline', textUnderlineOffset: '2px' }}>Honest Coffee Guide</a> community brew charts, not manufacturer µm/click specs. Different grinder designs measure different things — the mapping gives you a calibrated starting point, not a physical equivalent.
             </div>
             <div className="mb-2 text-center text-[10px] text-stone-700"
               style={{ fontFamily: '"DM Mono", monospace', letterSpacing: '0.05em' }}>
-              made by <a href="https://www.instagram.com/filtercoffeeconnoisseur" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline', textUnderlineOffset: '2px' }}>@filtercoffeeconnoisseur</a> with Claude · <a href="https://github.com/inosaint/grinder-calibrator/issues" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline', textUnderlineOffset: '2px' }}>report a bug</a>
+              made by <a href="https://www.instagram.com/filtercoffeeconnoisseur" target="_blank" rel="noopener noreferrer" onClick={() => posthog.capture('link_clicked', { label: '@filtercoffeeconnoisseur', href: 'https://www.instagram.com/filtercoffeeconnoisseur' })} style={{ color: 'inherit', textDecoration: 'underline', textUnderlineOffset: '2px' }}>@filtercoffeeconnoisseur</a> with Claude · <a href="https://github.com/inosaint/grinder-calibrator/issues" target="_blank" rel="noopener noreferrer" onClick={() => posthog.capture('link_clicked', { label: 'report a bug', href: 'https://github.com/inosaint/grinder-calibrator/issues' })} style={{ color: 'inherit', textDecoration: 'underline', textUnderlineOffset: '2px' }}>report a bug</a>
             </div>
           </main>
         </div>
