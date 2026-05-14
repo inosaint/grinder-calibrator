@@ -946,6 +946,16 @@
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         };
         setHistory((h) => [snap, ...h].slice(0, 8));
+        posthog.capture('snapshot_saved', {
+          source_grinder_id: leftId,
+          source_grinder_name: `${leftGrinder.name} ${leftGrinder.model}`.trim(),
+          source_click: leftClick,
+          target_grinder_id: rightId,
+          target_grinder_name: `${rightGrinder.name} ${rightGrinder.model}`.trim(),
+          target_click: rightClick,
+          method_id: methodId,
+          mapping_pair: `${leftId}→${rightId}`,
+        });
         audioRef.current.click('snap');
       };
 
