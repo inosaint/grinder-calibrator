@@ -1,0 +1,22 @@
+{
+  "name": "grindsize-intro",
+  "version": "1.0.0",
+  "description": "Remotion intro video for grindsize.in",
+  "scripts": {
+    "start": "npx remotion studio",
+    "build": "npx remotion render src/Root.tsx GrinderIntro out/intro.mp4",
+    "render": "npx remotion render src/Root.tsx GrinderIntro out/intro.mp4"
+  },
+  "dependencies": {
+    "@remotion/google-fonts": "^4.0.0",
+    "remotion": "^4.0.0",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0"
+  },
+  "devDependencies": {
+    "@remotion/cli": "^4.0.0",
+    "@types/react": "^18.0.0",
+    "@types/react-dom": "^18.0.0",
+    "typescript": "^5.0.0"
+  }
+}
