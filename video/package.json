@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "description": "Remotion intro video for grindsize.in",
   "scripts": {
-    "start": "npx remotion studio",
-    "build": "npx remotion render src/Root.tsx GrinderIntro out/intro.mp4",
-    "render": "npx remotion render src/Root.tsx GrinderIntro out/intro.mp4"
+    "start": "bunx remotion studio src/index.ts",
+    "build": "bunx remotion render src/index.ts GrinderIntro out/intro.mp4",
+    "render": "bunx remotion render src/index.ts GrinderIntro out/intro.mp4"
   },
   "dependencies": {
     "@remotion/google-fonts": "^4.0.0",
