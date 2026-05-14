@@ -960,6 +960,16 @@
       };
 
       const restoreSnapshot = (snap) => {
+        posthog.capture('snapshot_viewed', {
+          source_grinder_id: snap.left.id,
+          source_grinder_name: snap.left.name,
+          source_click: snap.left.click,
+          target_grinder_id: snap.right.id,
+          target_grinder_name: snap.right.name,
+          target_click: snap.right.click,
+          method_id: snap.method,
+          mapping_pair: `${snap.left.id}→${snap.right.id}`,
+        });
         setMethodId(snap.method);
         setLeftId(snap.left.id);
         setRightId(snap.right.id);
