@@ -2,7 +2,10 @@
 
 ![](./grinder-v1.png)
 
-A browser-based tool for mapping grind settings between hand grinders. Dial in a click count on one grinder and see the equivalent setting on another, based on each grinder's microns-per-click and zero-offset values. Includes brew method presets (V60, Espresso, AeroPress, Moka, Chemex, French Press, Cold Brew) with highlighted recommended ranges and haptic-style click audio feedback.
+A browser-based tool for specialty coffee grinders with two modes:
+
+- **Calibrator** — translate a grind setting from one hand grinder to another. Dial in a click count and see the equivalent on any other supported grinder, based on each grinder's µm/click and zero-offset. Includes brew method presets (V60, Espresso, AeroPress, Moka, Chemex, French Press, Cold Brew) with highlighted recommended ranges and haptic-style click feedback.
+- **Dialer (beta)** — get a starting grind range for a new bean. Select the processing type, roast profile, and altitude; pick your grinder; and get a recommended click range and brew temperature.
 
 **[Use it here](https://grindsize.in/)**
 
@@ -26,6 +29,14 @@ Microns are the single source of truth. Each brew method has a recommended micro
 ## Brew-method ranges source
 
 Recommended ranges are based on the [Honest Coffee Guide](https://honestcoffeeguide.com/) charts for each grinder, expressed in microns so they apply consistently across grinders.
+
+## Open questions
+
+Issues where real-world feedback conflicts with our HCG-sourced data. Needs more evidence before changing the config.
+
+| Grinder | Question |
+|---|---|
+| 1Zpresso Q Air / Q2 | **V60 range may start too fine.** HCG puts V60 at 1.2.0–2.0.1 (36–61 clicks). The 1Zpresso manufacturer chart puts Pour Over at 1.8.0–2.4.0 (54–72 clicks), with 1.2.0–1.8.0 labelled as AeroPress/Moka/Drip territory. A user grinding for pour-over found our start point too fine. Need more Q Air / Q2 user data to decide whether to adopt `methodOverrides` for V60. |
 
 ## License
 

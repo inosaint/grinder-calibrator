@@ -3,7 +3,44 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Hand Grinder Calibrator</title>
+  <title>Grind Size — Coffee Grinder Settings Calculator</title>
+  <meta name="description" content="Translate grind settings between hand grinders and get bean-based starting points for any brew method. Supports Comandante C40, Timemore S3/C2/C3, 1Zpresso ZP6/K-Ultra/Q Air, KINGrinder K6." />
+  <link rel="canonical" href="https://grindsize.in/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://grindsize.in/" />
+  <meta property="og:title" content="Grind Size — Coffee Grinder Settings Calculator" />
+  <meta property="og:description" content="Translate grind settings between hand grinders and get bean-based starting points for any brew method. Supports Comandante C40, Timemore S3/C2/C3, 1Zpresso ZP6/K-Ultra/Q Air, KINGrinder K6." />
+  <meta property="og:image" content="https://grindsize.in/grinder-v1.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Grind Size — Coffee Grinder Settings Calculator" />
+  <meta name="twitter:description" content="Translate grind settings between hand grinders and get bean-based starting points for any brew method. Supports Comandante C40, Timemore S3/C2/C3, 1Zpresso ZP6/K-Ultra/Q Air, KINGrinder K6." />
+  <meta name="twitter:image" content="https://grindsize.in/grinder-v1.png" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Grind Size",
+    "url": "https://grindsize.in/",
+    "description": "Translate grind settings between hand grinders and get bean-based starting points for any brew method. Supports Comandante C40, Timemore S3/C2/C3, 1Zpresso ZP6/K-Ultra/Q Air, KINGrinder K6.",
+    "applicationCategory": "UtilitiesApplication",
+    "operatingSystem": "Any",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "featureList": [
+      "Grind setting translation between hand grinders",
+      "Brew method presets: V60, Espresso, AeroPress, Moka, Chemex, French Press, Cold Brew",
+      "Bean-based grind recommendations by processing type, roast profile, and altitude",
+      "Supports Comandante C40, Timemore S3, Timemore C2, Timemore C3, 1Zpresso ZP6, 1Zpresso K-Ultra, 1Zpresso Q Air, KINGrinder K6"
+    ],
+    "author": {
+      "@type": "Person",
+      "name": "Kenneth Mark Dsouza"
+    }
+  }
+  </script>
   <link rel="icon" href="favicon/favicon.ico" sizes="any" />
   <link rel="icon" type="image/svg+xml" href="favicon/favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -330,6 +367,25 @@
       return hits[0].id;
     }
 
+    // ========== PROCESSING GUIDE DATA ==========
+    const PROCESSING_GUIDE = [
+      { id: 'washed',          label: 'Washed',           low: { um: [600,700],  temp: [92,93] }, high: { um: [700,800],  temp: [92,93] } },
+      { id: 'exp_washed',      label: 'Exp. Washed',      low: { um: [850,900],  temp: [92,93] }, high: { um: [700,800],  temp: [90,92] } },
+      { id: 'honey',           label: 'Honey',            low: { um: [650,700],  temp: [90,92] }, high: { um: [700,800],  temp: [90,92] } },
+      { id: 'exp_honey',       label: 'Exp./Ext. Honey',  low: { um: [600,700],  temp: [91,93] }, high: { um: [700,800],  temp: [90,92] } },
+      { id: 'classic_natural', label: 'Classic Natural',  low: { um: [700,750],  temp: [88,92] }, high: { um: [550,650],  temp: [90,92] } },
+      { id: 'exp_natural',     label: 'Exp./Ext. Natural',low: { um: [550,650],  temp: [87,90] }, high: { um: [500,650],  temp: [90,91] } },
+      { id: 'infused',         label: 'Infused / Others', low: { um: [550,650],  temp: [87,90] }, high: { um: [500,550],  temp: [88,92] } },
+    ];
+
+    function deriveDensity(roast, altitude) {
+      const highSignals = (roast === 'filter' ? 1 : 0) + (altitude === 'high' ? 1 : 0);
+      const lowSignals  = (roast === 'espresso' ? 1 : 0) + (altitude === 'low' ? 1 : 0);
+      if (highSignals > lowSignals) return 'high';
+      if (lowSignals > highSignals) return 'low';
+      return 'both';
+    }
+
     // ========== AUDIO ENGINE ==========
     class ClickAudio {
       constructor() {
@@ -406,6 +462,17 @@
     function micronsToClick(grinder, microns) {
       const raw = (microns - grinder.zeroOffset) / grinder.micronsPerClick;
       return Math.max(grinder.minClick, Math.min(grinder.maxClick, Math.round(raw)));
+    }
+    // For Bean Guide: grinders with methodOverrides have non-linear physical behavior.
+    // Anchor on the V60 override range (pour-over territory matches all PROCESSING_GUIDE µm).
+    function micronsToClickGuide(grinder, microns) {
+      if (grinder.methodOverrides && grinder.methodOverrides.v60) {
+        const umR = METHOD_MICRON_RANGES.v60;
+        const clkR = grinder.methodOverrides.v60;
+        const frac = Math.max(0, Math.min(1, (microns - umR[0]) / (umR[1] - umR[0])));
+        return Math.round(clkR[0] + frac * (clkR[1] - clkR[0]));
+      }
+      return micronsToClick(grinder, microns);
     }
     function mapClicks(fromGrinder, toGrinder, click, methodId) {
       // When both grinders have a recommended range for this method and the
@@ -852,6 +919,151 @@
       );
     }
 
+    // ========== BEAN GUIDE ==========
+    function BeanGuide() {
+      const [process, setProcess] = useState(null);
+      const [roast, setRoast]     = useState(null);
+      const [altitude, setAlt]    = useState(null);
+      const [grinderId, setGrinderId] = useState('commandante');
+      const grinder = GRINDERS[grinderId];
+
+      const density = (roast !== null && altitude !== null) ? deriveDensity(roast, altitude) : null;
+      const guide   = process ? PROCESSING_GUIDE.find(p => p.id === process) : null;
+
+      const pillBase = {
+        fontFamily: '"DM Mono", monospace',
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 1px 2px rgba(0,0,0,0.5)',
+        border: '1px solid #0a0908',
+      };
+      const pillActive = {
+        fontFamily: '"DM Mono", monospace',
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.2), 0 2px 4px rgba(0,0,0,0.6)',
+        border: '1px solid #5a4530',
+        fontWeight: 600,
+      };
+      function Pill({ label, active, onClick }) {
+        return (
+          <button
+            onClick={onClick}
+            className="flex-shrink-0 px-3 py-1.5 rounded-full text-[10px] tracking-[0.06em] uppercase transition-all"
+            style={active ? {
+              ...pillActive,
+              background: 'linear-gradient(180deg, #c89d6a 0%, #8a6a44 100%)',
+              color: '#0a0807',
+            } : {
+              ...pillBase,
+              background: 'linear-gradient(180deg, #1f1c1a 0%, #14110f 100%)',
+              color: '#a8a098',
+            }}
+          >
+            {label}
+          </button>
+        );
+      }
+
+      function ResultCard({ rec, densityLabel }) {
+        const lo = micronsToClickGuide(grinder, rec.um[0]);
+        const hi = micronsToClickGuide(grinder, rec.um[1]);
+        return (
+          <div
+            className="flex-1 px-4 py-3 rounded-md"
+            style={{
+              background: 'linear-gradient(180deg, #141c14 0%, #0a100a 100%)',
+              border: '1px solid #1a3020',
+            }}
+          >
+            <div className="text-[9px] tracking-[0.08em] uppercase mb-2" style={{ color: '#6a9a7a', fontFamily: '"DM Mono", monospace' }}>
+              {densityLabel} density
+            </div>
+            <div className="flex items-baseline gap-1.5 mb-1">
+              <span className="text-[11px] tracking-[0.06em] uppercase text-stone-400" style={{ fontFamily: '"DM Mono", monospace', minWidth: 52 }}>Grind</span>
+              <span className="text-[18px] font-bold tabular-nums leading-none" style={{ color: '#9bb086', fontFamily: '"DM Mono", monospace', letterSpacing: '-0.02em' }}>
+                {formatClickString(grinder, lo)} – {formatClickString(grinder, hi)}
+              </span>
+            </div>
+            <div className="flex items-baseline gap-1.5 mb-1">
+              <span className="text-[11px] tracking-[0.06em] uppercase text-stone-400" style={{ fontFamily: '"DM Mono", monospace', minWidth: 52 }}>Microns</span>
+              <span className="text-[13px] tabular-nums" style={{ color: '#c8c0b0', fontFamily: '"DM Mono", monospace' }}>{rec.um[0]}–{rec.um[1]} µm</span>
+            </div>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-[11px] tracking-[0.06em] uppercase text-stone-400" style={{ fontFamily: '"DM Mono", monospace', minWidth: 52 }}>Temp</span>
+              <span className="text-[13px] tabular-nums" style={{ color: '#c8c0b0', fontFamily: '"DM Mono", monospace' }}>{rec.temp[0]}–{rec.temp[1]}°C</span>
+            </div>
+          </div>
+        );
+      }
+
+      const showResult = guide && density;
+
+      return (
+        <div className="space-y-4">
+          {/* Process */}
+          <div>
+            <div className="text-[9px] tracking-[0.08em] uppercase text-stone-500 mb-2" style={{ fontFamily: '"DM Mono", monospace' }}>Processing</div>
+            <div className="-mx-1 overflow-x-auto">
+              <div className="flex gap-1.5 px-1">
+                {PROCESSING_GUIDE.map(p => (
+                  <Pill key={p.id} label={p.label} active={process === p.id} onClick={() => setProcess(p.id)} />
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Roast */}
+          <div>
+            <div className="text-[9px] tracking-[0.08em] uppercase text-stone-500 mb-2" style={{ fontFamily: '"DM Mono", monospace' }}>Roast profile</div>
+            <div className="flex gap-1.5">
+              {[['filter','Filter / Omni'],['espresso','Espresso'],['unknown','Not listed']].map(([id, lbl]) => (
+                <Pill key={id} label={lbl} active={roast === id} onClick={() => setRoast(id)} />
+              ))}
+            </div>
+          </div>
+
+          {/* Altitude */}
+          <div>
+            <div className="text-[9px] tracking-[0.08em] uppercase text-stone-500 mb-2" style={{ fontFamily: '"DM Mono", monospace' }}>Altitude</div>
+            <div className="flex gap-1.5">
+              {[['high','High (>1400m)'],['low','Low (<1400m)'],['unknown','Not listed']].map(([id, lbl]) => (
+                <Pill key={id} label={lbl} active={altitude === id} onClick={() => setAlt(id)} />
+              ))}
+            </div>
+          </div>
+
+          {/* Grinder */}
+          <div>
+            <div className="text-[9px] tracking-[0.08em] uppercase text-stone-500 mb-2" style={{ fontFamily: '"DM Mono", monospace' }}>Grinder</div>
+            <GrinderPicker value={grinderId} onChange={setGrinderId} />
+          </div>
+
+          {/* Result */}
+          {showResult && (
+            <div className="pt-2">
+              <div className="text-[9px] tracking-[0.08em] uppercase text-stone-500 mb-3" style={{ fontFamily: '"DM Mono", monospace' }}>
+                Starting point · {grinder.name} {grinder.model} · {guide.label}
+              </div>
+              <div className="flex gap-3">
+                {density === 'both' ? (
+                  <>
+                    <ResultCard rec={guide.low}  densityLabel="Low" />
+                    <ResultCard rec={guide.high} densityLabel="High" />
+                  </>
+                ) : (
+                  <ResultCard rec={guide[density]} densityLabel={density === 'high' ? 'High' : 'Low'} />
+                )}
+              </div>
+              <div className="mt-3 text-[8px] tracking-[0.04em] text-stone-600 leading-relaxed" style={{ fontFamily: '"DM Mono", monospace' }}>
+                Starting point — adjust ±1–2 clicks to taste.{' '}
+                Grounded in{' '}
+                <a href="https://coffeegeek.com/wp-content/uploads/2023/10/SCAGoldCupStandard.pdf" target="_blank" rel="noopener" style={{ color: '#6a8a7a', textDecoration: 'underline' }}>SCA Golden Cup Standard</a>
+                {' '}·{' '}
+                <a href="https://coffeeadastra.com/" target="_blank" rel="noopener" style={{ color: '#6a8a7a', textDecoration: 'underline' }}>Jonathan Gagné / Coffee Ad Astra</a>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
     // ========== GRINDER DISCLAIMER ==========
     function GrinderDisclaimer({ grinder, methodId }) {
       if (grinder.id !== 'zp6') return null;
@@ -887,6 +1099,7 @@
       const audioRef = useRef(new ClickAudio());
       const [soundOn, setSoundOn] = useState(true);
       const [historyOpen, setHistoryOpen] = useState(false);
+      const [tab, setTab] = useState('calibrate');
       const [history, setHistory] = useState([]);
       const [methodId, setMethodId] = useState('v60');
       const [leftId, setLeftId] = useState('commandante');
@@ -1068,21 +1281,54 @@
               <HistoryIcon size={16} />
             </button>
 
-            <div className="flex flex-col items-center">
-              <div className="text-[10px] tracking-[0.12em] uppercase text-stone-500" style={{ fontFamily: '"DM Mono", monospace' }}>
-                Hand Grinder
-              </div>
-              <div
-                className="text-[18px] leading-none mt-0.5 text-stone-100"
-                style={{
-                  fontFamily: '"Bodoni Moda", serif',
-                  fontStyle: 'italic',
-                  fontWeight: 500,
-                  letterSpacing: '0.04em',
-                }}
-              >
-                Calibrator
-              </div>
+            <div
+              className="flex items-center"
+              style={{
+                background: '#0a0908',
+                borderRadius: 9999,
+                padding: '3px',
+                border: '1px solid #2a2520',
+                gap: 2,
+              }}
+            >
+              {[['calibrate','Calibrator',false],['guide','Dialer',true]].map(([id,lbl,beta]) => {
+                const active = tab === id;
+                return (
+                  <button
+                    key={id}
+                    onClick={() => setTab(id)}
+                    className="transition-all active:scale-95"
+                    style={{
+                      borderRadius: 9999,
+                      padding: '5px 14px',
+                      fontSize: 11,
+                      fontFamily: '"DM Mono", monospace',
+                      letterSpacing: '0.06em',
+                      textTransform: 'uppercase',
+                      background: active ? 'linear-gradient(180deg, #2a2520 0%, #1a1510 100%)' : 'transparent',
+                      color: active ? '#d4c8b8' : '#6a625a',
+                      boxShadow: active ? 'inset 0 1px 0 rgba(255,255,255,0.08), 0 1px 3px rgba(0,0,0,0.7)' : 'none',
+                      border: 'none',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 4,
+                    }}
+                  >
+                    {lbl}
+                    {beta && (
+                      <span style={{
+                        fontSize: 8,
+                        letterSpacing: '0.04em',
+                        color: active ? '#c89d6a' : '#4a4240',
+                        background: active ? 'rgba(200,157,106,0.15)' : 'transparent',
+                        padding: '1px 4px',
+                        borderRadius: 4,
+                        fontWeight: 600,
+                      }}>beta</span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
 
             <button
@@ -1145,6 +1391,9 @@
           )}
 
           <main className="px-4 pt-6 pb-20 max-w-md md:max-w-4xl mx-auto">
+            {tab === 'guide' && <BeanGuide />}
+
+            {tab === 'calibrate' && <>
             <div className="mb-6 -mx-1 overflow-x-auto">
               <div className="flex gap-1.5 px-1">
                 {METHODS.map((m) => {
@@ -1246,6 +1495,8 @@
               </div>
 
             </div>
+
+            </>}
 
             <div className="mt-16 mb-1 text-center text-[10px] leading-relaxed text-stone-600"
               style={{ fontFamily: '"DM Mono", monospace', letterSpacing: '0.05em' }}>
