@@ -426,6 +426,17 @@
       const raw = (microns - grinder.zeroOffset) / grinder.micronsPerClick;
       return Math.max(grinder.minClick, Math.min(grinder.maxClick, Math.round(raw)));
     }
+    // For Bean Guide: grinders with methodOverrides have non-linear physical behavior.
+    // Anchor on the V60 override range (pour-over territory matches all PROCESSING_GUIDE µm).
+    function micronsToClickGuide(grinder, microns) {
+      if (grinder.methodOverrides && grinder.methodOverrides.v60) {
+        const umR = METHOD_MICRON_RANGES.v60;
+        const clkR = grinder.methodOverrides.v60;
+        const frac = Math.max(0, Math.min(1, (microns - umR[0]) / (umR[1] - umR[0])));
+        return Math.round(clkR[0] + frac * (clkR[1] - clkR[0]));
+      }
+      return micronsToClick(grinder, microns);
+    }
     function mapClicks(fromGrinder, toGrinder, click, methodId) {
       // When both grinders have a recommended range for this method and the
       // source click sits inside its own range, map by relative position
@@ -914,8 +925,8 @@
       }
 
       function ResultCard({ rec, densityLabel }) {
-        const lo = micronsToClick(grinder, rec.um[0]);
-        const hi = micronsToClick(grinder, rec.um[1]);
+        const lo = micronsToClickGuide(grinder, rec.um[0]);
+        const hi = micronsToClickGuide(grinder, rec.um[1]);
         return (
           <div
             className="flex-1 px-4 py-3 rounded-md"
