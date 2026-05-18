@@ -2,7 +2,10 @@
 
 ![](./grinder-v1.png)
 
-A browser-based tool for mapping grind settings between hand grinders. Dial in a click count on one grinder and see the equivalent setting on another, based on each grinder's microns-per-click and zero-offset values. Includes brew method presets (V60, Espresso, AeroPress, Moka, Chemex, French Press, Cold Brew) with highlighted recommended ranges and haptic-style click audio feedback.
+A browser-based tool for specialty coffee grinders with two modes:
+
+- **Calibrator** — translate a grind setting from one hand grinder to another. Dial in a click count and see the equivalent on any other supported grinder, based on each grinder's µm/click and zero-offset. Includes brew method presets (V60, Espresso, AeroPress, Moka, Chemex, French Press, Cold Brew) with highlighted recommended ranges and haptic-style click feedback.
+- **Dialer (beta)** — get a starting grind range for a new bean. Select the processing type, roast profile, and altitude; pick your grinder; and get a recommended click range and brew temperature.
 
 **[Use it here](https://grindsize.in/)**
 
