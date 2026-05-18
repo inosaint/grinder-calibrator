@@ -1233,21 +1233,54 @@
               <HistoryIcon size={16} />
             </button>
 
-            <div className="flex flex-col items-center">
-              <div className="text-[10px] tracking-[0.12em] uppercase text-stone-500" style={{ fontFamily: '"DM Mono", monospace' }}>
-                Hand Grinder
-              </div>
-              <div
-                className="text-[18px] leading-none mt-0.5 text-stone-100"
-                style={{
-                  fontFamily: '"Bodoni Moda", serif',
-                  fontStyle: 'italic',
-                  fontWeight: 500,
-                  letterSpacing: '0.04em',
-                }}
-              >
-                Calibrator
-              </div>
+            <div
+              className="flex items-center"
+              style={{
+                background: '#0a0908',
+                borderRadius: 9999,
+                padding: '3px',
+                border: '1px solid #2a2520',
+                gap: 2,
+              }}
+            >
+              {[['calibrate','Calibrator',false],['guide','Dialer',true]].map(([id,lbl,beta]) => {
+                const active = tab === id;
+                return (
+                  <button
+                    key={id}
+                    onClick={() => setTab(id)}
+                    className="transition-all active:scale-95"
+                    style={{
+                      borderRadius: 9999,
+                      padding: '5px 14px',
+                      fontSize: 11,
+                      fontFamily: '"DM Mono", monospace',
+                      letterSpacing: '0.06em',
+                      textTransform: 'uppercase',
+                      background: active ? 'linear-gradient(180deg, #2a2520 0%, #1a1510 100%)' : 'transparent',
+                      color: active ? '#d4c8b8' : '#6a625a',
+                      boxShadow: active ? 'inset 0 1px 0 rgba(255,255,255,0.08), 0 1px 3px rgba(0,0,0,0.7)' : 'none',
+                      border: 'none',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 4,
+                    }}
+                  >
+                    {lbl}
+                    {beta && (
+                      <span style={{
+                        fontSize: 8,
+                        letterSpacing: '0.04em',
+                        color: active ? '#c89d6a' : '#4a4240',
+                        background: active ? 'rgba(200,157,106,0.15)' : 'transparent',
+                        padding: '1px 4px',
+                        borderRadius: 4,
+                        fontWeight: 600,
+                      }}>β</span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
 
             <button
@@ -1310,30 +1343,6 @@
           )}
 
           <main className="px-4 pt-6 pb-20 max-w-md md:max-w-4xl mx-auto">
-            {/* TAB TOGGLE */}
-            <div className="flex gap-1.5 mb-6">
-              {[['calibrate','Calibrate'],['guide','Bean Guide']].map(([id, lbl]) => {
-                const active = tab === id;
-                return (
-                  <button
-                    key={id}
-                    onClick={() => setTab(id)}
-                    className="px-4 py-1.5 rounded-full text-[10px] tracking-[0.06em] uppercase transition-all"
-                    style={{
-                      background: active ? 'linear-gradient(180deg, #c89d6a 0%, #8a6a44 100%)' : 'linear-gradient(180deg, #1f1c1a 0%, #14110f 100%)',
-                      color: active ? '#0a0807' : '#a8a098',
-                      boxShadow: active ? 'inset 0 1px 0 rgba(255,255,255,0.2), 0 2px 4px rgba(0,0,0,0.6)' : 'inset 0 1px 0 rgba(255,255,255,0.05), 0 1px 2px rgba(0,0,0,0.5)',
-                      border: active ? '1px solid #5a4530' : '1px solid #0a0908',
-                      fontFamily: '"DM Mono", monospace',
-                      fontWeight: active ? 600 : 400,
-                    }}
-                  >
-                    {lbl}
-                  </button>
-                );
-              })}
-            </div>
-
             {tab === 'guide' && <BeanGuide />}
 
             {tab === 'calibrate' && <>
