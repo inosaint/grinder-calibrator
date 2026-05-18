@@ -21,21 +21,38 @@ Each grinder in `GRINDERS` looks like this:
   maxClick: <int>,
   micronsPerClick: <number>,        // use the back-fit value from the research, not the raw hardware spec if they disagree
   zeroOffset: <number>,             // 0 if burrs-touching zero, or the factory gap in µm (e.g., S3 has 75)
-  majorTick: <int>,                 // tick spacing for the bezel labels (5 for C40, 6 for C2, 10 for S3/ZP6)
+  majorTick: <int>,                 // tick spacing for the bezel labels (5 for C40, 6 for C2, 10 for S3/ZP6/K-Ultra, 60 for K6)
   accentColor: '#rrggbb',           // pick distinct from existing — see below
   excludedMethods: ['espresso'],    // optional — array of method ids the grinder physically can't do
-  dialNotation: 'numbered',         // optional — set when the grinder shows N.C format (S3, ZP6 style)
+  dialNotation: 'numbered',         // optional — set when the grinder uses N.C or R.N.C format; always pair with majorTick
+  clicksPerRotation: <int>,         // optional — set when the dial spans multiple rotations (K-Ultra: 100, Q Air: 30, K6: 60). Omit for ZP6/S3 which use a single rotation.
+  clicksPerNumber: <int>,           // optional — set when the rotation has numbered sub-positions (K-Ultra: 10, Q Air: 3). Omit for K6 which reads R.CC (no numbered sub-positions).
 }
 ```
+
+### Dial notation guide
+
+| Format | Description | dialNotation | clicksPerRotation | clicksPerNumber | Example grinders |
+|---|---|---|---|---|---|
+| plain | Integer clicks | (omit) | (omit) | (omit) | C40, C2, C3 |
+| N.C | One rotation, numbered positions + sub-clicks | `'numbered'` | (omit) | (omit) | ZP6, S3 |
+| R.N.T or R.N.C | Multi-rotation with numbered positions | `'numbered'` | e.g. 100 or 30 | e.g. 10 or 3 | K-Ultra, Q Air |
+| R.CC | Multi-rotation, raw click count within rotation | `'numbered'` | e.g. 60 | (omit) | K6 |
+
+`majorTick` controls the arc tick density. For R.N.C/R.N.T grinders it should equal `clicksPerRotation / 10` (one tick per numbered position). For R.CC it should equal `clicksPerRotation` (one tick per full rotation).
 
 `METHOD_MICRON_RANGES` is the truth and **must not be changed**. The recommended-range arc on each grinder's dial is computed automatically from those microns via `getMethodClickRange`.
 
 ## Existing accent colours (avoid clashes)
 
-- `#c89d6a` — Comandante (warm gold)
+- `#c89d6a` — Comandante C40 (warm gold)
 - `#9bb086` — Timemore S3 (muted green)
 - `#b89a7c` — Timemore C2 (warm tan)
 - `#7ab4d0` — 1Zpresso ZP6 (steel blue)
+- `#a98aa5` — 1Zpresso K-Ultra (dusty plum)
+- `#a07850` — KINGrinder K6 (muted bronze)
+- `#c47a5a` — 1Zpresso Q Air (terracotta)
+- `#8aab9b` — Timemore C3 (sage)
 
 Pick something visually distinct — a muted bronze, slate, plum, sage, etc. — that still reads on the dark background. Avoid pure-saturation colours; everything in the app is desaturated/earthy.
 
@@ -51,7 +68,7 @@ Pick something visually distinct — a muted bronze, slate, plum, sage, etc. —
 
 - Don't change `METHOD_MICRON_RANGES`.
 - Don't change other grinders' configs.
-- Don't add or rename helper functions. The schema above is exhaustive — if the research suggests a field that isn't in the schema, surface it to the user rather than inventing a new field.
+- Don't add or rename helper functions. The schema above is exhaustive — `clicksPerRotation` and `clicksPerNumber` are valid fields; any other new field should be raised with the user.
 - Don't update the README — the researcher already did that. Don't update the disclaimer footer.
 - Don't add disclaimers in the UI for the new grinder unless the research explicitly calls for one (the way ZP6's `GrinderDisclaimer` is gated on `grinder.id === 'zp6'`). If you think one is needed, ask the user — don't ship it silently.
 

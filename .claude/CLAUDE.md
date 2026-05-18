@@ -29,17 +29,25 @@ Built by @filtercoffeeconnoisseur in collaboration with Claude. The audience is 
   id, name, model, subtitle,
   minClick, maxClick, micronsPerClick, zeroOffset, majorTick,
   accentColor,
-  variants?,           // long string for the dropdown if the same config covers sibling models
-  excludedMethods?,    // array of method ids this grinder physically can't do (e.g., ZP6 espresso)
-  dialNotation?,       // 'numbered' for grinders that read N.C (S3, ZP6); omit for plain integer click counts
+  variants?,            // long string for the dropdown if the same config covers sibling models
+  excludedMethods?,     // array of method ids this grinder physically can't do (e.g., ZP6 espresso)
+  dialNotation?,        // 'numbered' for grinders that read N.C / R.N.C / R.CC; omit for plain integer click counts
+  clicksPerRotation?,   // set for multi-rotation dials (K-Ultra: 100, Q Air: 30, K6: 60); omit for ZP6/S3
+  clicksPerNumber?,     // set when the rotation has numbered sub-positions (K-Ultra: 10, Q Air: 3); omit for K6 R.CC format
 }
 ```
+
+Dial notation summary: plain integers (C40/C2/C3) → no `dialNotation`; single-rotation N.C (ZP6/S3) → `dialNotation:'numbered'` only; multi-rotation R.N.T/R.N.C (K-Ultra/Q Air) → also `clicksPerRotation` + `clicksPerNumber`; multi-rotation R.CC (K6) → also `clicksPerRotation` only.
 
 **Existing accent colours** (avoid clashes when adding new grinders):
 - `#c89d6a` Comandante C40 (warm gold)
 - `#9bb086` Timemore S3 (muted green)
 - `#b89a7c` Timemore C2 (warm tan)
 - `#7ab4d0` 1Zpresso ZP6 (steel blue)
+- `#a98aa5` 1Zpresso K-Ultra (dusty plum)
+- `#a07850` KINGrinder K6 (muted bronze)
+- `#c47a5a` 1Zpresso Q Air (terracotta)
+- `#8aab9b` Timemore C3 (sage)
 
 ## Conventions
 

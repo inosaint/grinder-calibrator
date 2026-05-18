@@ -23,7 +23,13 @@ So the only per-grinder data we actually need for the recommended-range overlay 
 For the named grinder, find:
 
 1. **Hardware spec** — manufacturer's µm/click figure, total click count, zero-point procedure (burrs-touching vs factory gap), burr family/material/diameter
-2. **Dial notation** — single number (C2-style "35"), or `N.C` numbered-positions × sub-clicks (S3/ZP6-style "3.5"), or something else
+2. **Dial notation** — determine which format the grinder uses and what values to set:
+   - Plain integer clicks (C40, C2, C3): no `dialNotation`, no rotation fields
+   - Single-rotation N.C (ZP6, S3): `dialNotation: 'numbered'`, no `clicksPerRotation`
+   - Multi-rotation R.N.T / R.N.C (K-Ultra: 100 clicks/rotation, 10/rotation; Q Air: 30 clicks/rotation, 3 clicks/number): `dialNotation: 'numbered'`, plus `clicksPerRotation` and `clicksPerNumber`
+   - Multi-rotation R.CC without numbered sub-positions (K6: 60 clicks/rotation): `dialNotation: 'numbered'`, `clicksPerRotation` only (no `clicksPerNumber`)
+   
+   Check HCG's published setting examples — if they write "1.2.0" or "0.5.3", that tells you both the format and the rotation/number/click structure.
 3. **HCG brew-method click ranges** — fetch directly from `honestcoffeeguide.com` for as many of these methods as published: espresso, moka pot, AeroPress, V60 / pour-over, Chemex, French press, cold brew. Espresso may be marked unsupported.
 4. **Variants** — sibling models that share the same burr + click mechanism + step size (e.g., C2 ↔ C2 Max ↔ C2S ↔ C2 Fold). One config covers them all; list them.
 5. **Excluded methods** — any method the grinder physically cannot do (e.g., ZP6 cannot pull espresso because of hexagonal-burr particle distribution)
@@ -52,7 +58,7 @@ For each method, compute `µm/click = mid(METHOD_MICRON_RANGES[method]) / mid(HC
 
 Write to `grinder-research/<short-name>.md`. Match the rough shape of the existing files in that folder — TL;DR up top, then key findings, then a JS-style spec block, then caveats. Include:
 
-- Final recommended config values (`minClick`, `maxClick`, `micronsPerClick`, `zeroOffset`, `majorTick`, `dialNotation` if applicable, `excludedMethods` if any, `variants` string if any)
+- Final recommended config values (`minClick`, `maxClick`, `micronsPerClick`, `zeroOffset`, `majorTick`, `dialNotation` if applicable, `clicksPerRotation` and `clicksPerNumber` if multi-rotation, `excludedMethods` if any, `variants` string if any)
 - The hardware-vs-HCG discrepancy if you found one, with the back-fit calculation shown
 - Source URLs for everything load-bearing
 - A "do not confuse with" section if there are similarly-named distinct grinders
@@ -68,7 +74,7 @@ After writing the research file and updating the README, invoke the `grinder-imp
 - Absolute path to your research markdown
 - The exact recommended config values (so the implementer doesn't re-derive)
 - The user-facing grinder name + suggested `id` (snake_case)
-- Any presentation notes (e.g., "use dialNotation: 'numbered'" or "set excludedMethods: ['espresso']")
+- Any presentation notes (e.g., "use dialNotation: 'numbered' with clicksPerRotation: 30, clicksPerNumber: 3" or "set excludedMethods: ['espresso']")
 - A reminder to pick an accent colour distinct from the existing four (C40 `#c89d6a`, S3 `#9bb086`, C2 `#b89a7c`, ZP6 `#7ab4d0`)
 
 Once the implementer returns, summarise to the user: what grinder was added, the back-fit µm/click vs the manufacturer figure (if they differ), and any caveats they should know about (e.g., excluded methods, dial-notation quirks).
