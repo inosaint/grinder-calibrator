@@ -34,7 +34,8 @@ None in this release.
 
 - Added `<meta name="description">`, Open Graph, and Twitter Card tags
 - Added `<link rel="canonical" href="https://grindsize.in/" />`
-- Updated page title to "Grind Size — Hand Grinder Calibrator"
+- Updated page title to "Grind Size — Coffee Grinder Settings Calculator"
+- Added JSON-LD `WebApplication` structured data for SEO / AEO
 
 ---
 
