@@ -330,6 +330,25 @@
       return hits[0].id;
     }
 
+    // ========== PROCESSING GUIDE DATA ==========
+    const PROCESSING_GUIDE = [
+      { id: 'washed',          label: 'Washed',           low: { um: [600,700],  temp: [92,93] }, high: { um: [700,800],  temp: [92,93] } },
+      { id: 'exp_washed',      label: 'Exp. Washed',      low: { um: [850,900],  temp: [92,93] }, high: { um: [700,800],  temp: [90,92] } },
+      { id: 'honey',           label: 'Honey',            low: { um: [650,700],  temp: [90,92] }, high: { um: [700,800],  temp: [90,92] } },
+      { id: 'exp_honey',       label: 'Exp./Ext. Honey',  low: { um: [600,700],  temp: [91,93] }, high: { um: [700,800],  temp: [90,92] } },
+      { id: 'classic_natural', label: 'Classic Natural',  low: { um: [700,750],  temp: [88,92] }, high: { um: [550,650],  temp: [90,92] } },
+      { id: 'exp_natural',     label: 'Exp./Ext. Natural',low: { um: [550,650],  temp: [87,90] }, high: { um: [500,650],  temp: [90,91] } },
+      { id: 'infused',         label: 'Infused / Others', low: { um: [550,650],  temp: [87,90] }, high: { um: [500,550],  temp: [88,92] } },
+    ];
+
+    function deriveDensity(roast, altitude) {
+      const highSignals = (roast === 'filter' ? 1 : 0) + (altitude === 'high' ? 1 : 0);
+      const lowSignals  = (roast === 'espresso' ? 1 : 0) + (altitude === 'low' ? 1 : 0);
+      if (highSignals > lowSignals) return 'high';
+      if (lowSignals > highSignals) return 'low';
+      return 'both';
+    }
+
     // ========== AUDIO ENGINE ==========
     class ClickAudio {
       constructor() {
@@ -852,6 +871,151 @@
       );
     }
 
+    // ========== BEAN GUIDE ==========
+    function BeanGuide() {
+      const [process, setProcess] = useState(null);
+      const [roast, setRoast]     = useState(null);
+      const [altitude, setAlt]    = useState(null);
+      const [grinderId, setGrinderId] = useState('commandante');
+      const grinder = GRINDERS[grinderId];
+
+      const density = (roast !== null && altitude !== null) ? deriveDensity(roast, altitude) : null;
+      const guide   = process ? PROCESSING_GUIDE.find(p => p.id === process) : null;
+
+      const pillBase = {
+        fontFamily: '"DM Mono", monospace',
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 1px 2px rgba(0,0,0,0.5)',
+        border: '1px solid #0a0908',
+      };
+      const pillActive = {
+        fontFamily: '"DM Mono", monospace',
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.2), 0 2px 4px rgba(0,0,0,0.6)',
+        border: '1px solid #5a4530',
+        fontWeight: 600,
+      };
+      function Pill({ label, active, onClick }) {
+        return (
+          <button
+            onClick={onClick}
+            className="flex-shrink-0 px-3 py-1.5 rounded-full text-[10px] tracking-[0.06em] uppercase transition-all"
+            style={active ? {
+              ...pillActive,
+              background: 'linear-gradient(180deg, #c89d6a 0%, #8a6a44 100%)',
+              color: '#0a0807',
+            } : {
+              ...pillBase,
+              background: 'linear-gradient(180deg, #1f1c1a 0%, #14110f 100%)',
+              color: '#a8a098',
+            }}
+          >
+            {label}
+          </button>
+        );
+      }
+
+      function ResultCard({ rec, densityLabel }) {
+        const lo = micronsToClick(grinder, rec.um[0]);
+        const hi = micronsToClick(grinder, rec.um[1]);
+        return (
+          <div
+            className="flex-1 px-4 py-3 rounded-md"
+            style={{
+              background: 'linear-gradient(180deg, #141c14 0%, #0a100a 100%)',
+              border: '1px solid #1a3020',
+            }}
+          >
+            <div className="text-[9px] tracking-[0.08em] uppercase mb-2" style={{ color: '#6a9a7a', fontFamily: '"DM Mono", monospace' }}>
+              {densityLabel} density
+            </div>
+            <div className="flex items-baseline gap-1.5 mb-1">
+              <span className="text-[11px] tracking-[0.06em] uppercase text-stone-400" style={{ fontFamily: '"DM Mono", monospace', minWidth: 52 }}>Grind</span>
+              <span className="text-[18px] font-bold tabular-nums leading-none" style={{ color: '#9bb086', fontFamily: '"DM Mono", monospace', letterSpacing: '-0.02em' }}>
+                {formatClickString(grinder, lo)} – {formatClickString(grinder, hi)}
+              </span>
+            </div>
+            <div className="flex items-baseline gap-1.5 mb-1">
+              <span className="text-[11px] tracking-[0.06em] uppercase text-stone-400" style={{ fontFamily: '"DM Mono", monospace', minWidth: 52 }}>Microns</span>
+              <span className="text-[13px] tabular-nums" style={{ color: '#c8c0b0', fontFamily: '"DM Mono", monospace' }}>{rec.um[0]}–{rec.um[1]} µm</span>
+            </div>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-[11px] tracking-[0.06em] uppercase text-stone-400" style={{ fontFamily: '"DM Mono", monospace', minWidth: 52 }}>Temp</span>
+              <span className="text-[13px] tabular-nums" style={{ color: '#c8c0b0', fontFamily: '"DM Mono", monospace' }}>{rec.temp[0]}–{rec.temp[1]}°C</span>
+            </div>
+          </div>
+        );
+      }
+
+      const showResult = guide && density;
+
+      return (
+        <div className="space-y-4">
+          {/* Process */}
+          <div>
+            <div className="text-[9px] tracking-[0.08em] uppercase text-stone-500 mb-2" style={{ fontFamily: '"DM Mono", monospace' }}>Processing</div>
+            <div className="-mx-1 overflow-x-auto">
+              <div className="flex gap-1.5 px-1">
+                {PROCESSING_GUIDE.map(p => (
+                  <Pill key={p.id} label={p.label} active={process === p.id} onClick={() => setProcess(p.id)} />
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Roast */}
+          <div>
+            <div className="text-[9px] tracking-[0.08em] uppercase text-stone-500 mb-2" style={{ fontFamily: '"DM Mono", monospace' }}>Roast profile</div>
+            <div className="flex gap-1.5">
+              {[['filter','Filter / Omni'],['espresso','Espresso'],['unknown','Not listed']].map(([id, lbl]) => (
+                <Pill key={id} label={lbl} active={roast === id} onClick={() => setRoast(id)} />
+              ))}
+            </div>
+          </div>
+
+          {/* Altitude */}
+          <div>
+            <div className="text-[9px] tracking-[0.08em] uppercase text-stone-500 mb-2" style={{ fontFamily: '"DM Mono", monospace' }}>Altitude</div>
+            <div className="flex gap-1.5">
+              {[['high','High (>1400m)'],['low','Low (<1400m)'],['unknown','Not listed']].map(([id, lbl]) => (
+                <Pill key={id} label={lbl} active={altitude === id} onClick={() => setAlt(id)} />
+              ))}
+            </div>
+          </div>
+
+          {/* Grinder */}
+          <div>
+            <div className="text-[9px] tracking-[0.08em] uppercase text-stone-500 mb-2" style={{ fontFamily: '"DM Mono", monospace' }}>Grinder</div>
+            <GrinderPicker value={grinderId} onChange={setGrinderId} />
+          </div>
+
+          {/* Result */}
+          {showResult && (
+            <div className="pt-2">
+              <div className="text-[9px] tracking-[0.08em] uppercase text-stone-500 mb-3" style={{ fontFamily: '"DM Mono", monospace' }}>
+                Starting point · {grinder.name} {grinder.model} · {guide.label}
+              </div>
+              <div className="flex gap-3">
+                {density === 'both' ? (
+                  <>
+                    <ResultCard rec={guide.low}  densityLabel="Low" />
+                    <ResultCard rec={guide.high} densityLabel="High" />
+                  </>
+                ) : (
+                  <ResultCard rec={guide[density]} densityLabel={density === 'high' ? 'High' : 'Low'} />
+                )}
+              </div>
+              <div className="mt-3 text-[8px] tracking-[0.04em] text-stone-600 leading-relaxed" style={{ fontFamily: '"DM Mono", monospace' }}>
+                Starting point — adjust ±1–2 clicks to taste.{' '}
+                Grounded in{' '}
+                <a href="https://coffeegeek.com/wp-content/uploads/2023/10/SCAGoldCupStandard.pdf" target="_blank" rel="noopener" style={{ color: '#6a8a7a', textDecoration: 'underline' }}>SCA Golden Cup Standard</a>
+                {' '}·{' '}
+                <a href="https://coffeeadastra.com/" target="_blank" rel="noopener" style={{ color: '#6a8a7a', textDecoration: 'underline' }}>Jonathan Gagné / Coffee Ad Astra</a>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
     // ========== GRINDER DISCLAIMER ==========
     function GrinderDisclaimer({ grinder, methodId }) {
       if (grinder.id !== 'zp6') return null;
@@ -887,6 +1051,7 @@
       const audioRef = useRef(new ClickAudio());
       const [soundOn, setSoundOn] = useState(true);
       const [historyOpen, setHistoryOpen] = useState(false);
+      const [tab, setTab] = useState('calibrate');
       const [history, setHistory] = useState([]);
       const [methodId, setMethodId] = useState('v60');
       const [leftId, setLeftId] = useState('commandante');
@@ -1145,6 +1310,33 @@
           )}
 
           <main className="px-4 pt-6 pb-20 max-w-md md:max-w-4xl mx-auto">
+            {/* TAB TOGGLE */}
+            <div className="flex gap-1.5 mb-6">
+              {[['calibrate','Calibrate'],['guide','Bean Guide']].map(([id, lbl]) => {
+                const active = tab === id;
+                return (
+                  <button
+                    key={id}
+                    onClick={() => setTab(id)}
+                    className="px-4 py-1.5 rounded-full text-[10px] tracking-[0.06em] uppercase transition-all"
+                    style={{
+                      background: active ? 'linear-gradient(180deg, #c89d6a 0%, #8a6a44 100%)' : 'linear-gradient(180deg, #1f1c1a 0%, #14110f 100%)',
+                      color: active ? '#0a0807' : '#a8a098',
+                      boxShadow: active ? 'inset 0 1px 0 rgba(255,255,255,0.2), 0 2px 4px rgba(0,0,0,0.6)' : 'inset 0 1px 0 rgba(255,255,255,0.05), 0 1px 2px rgba(0,0,0,0.5)',
+                      border: active ? '1px solid #5a4530' : '1px solid #0a0908',
+                      fontFamily: '"DM Mono", monospace',
+                      fontWeight: active ? 600 : 400,
+                    }}
+                  >
+                    {lbl}
+                  </button>
+                );
+              })}
+            </div>
+
+            {tab === 'guide' && <BeanGuide />}
+
+            {tab === 'calibrate' && <>
             <div className="mb-6 -mx-1 overflow-x-auto">
               <div className="flex gap-1.5 px-1">
                 {METHODS.map((m) => {
@@ -1246,6 +1438,8 @@
               </div>
 
             </div>
+
+            </>}
 
             <div className="mt-16 mb-1 text-center text-[10px] leading-relaxed text-stone-600"
               style={{ fontFamily: '"DM Mono", monospace', letterSpacing: '0.05em' }}>
