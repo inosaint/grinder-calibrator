@@ -30,6 +30,14 @@ Microns are the single source of truth. Each brew method has a recommended micro
 
 Recommended ranges are based on the [Honest Coffee Guide](https://honestcoffeeguide.com/) charts for each grinder, expressed in microns so they apply consistently across grinders.
 
+## Open questions
+
+Issues where real-world feedback conflicts with our HCG-sourced data. Needs more evidence before changing the config.
+
+| Grinder | Question |
+|---|---|
+| 1Zpresso Q Air / Q2 | **V60 range may start too fine.** HCG puts V60 at 1.2.0–2.0.1 (36–61 clicks). The 1Zpresso manufacturer chart puts Pour Over at 1.8.0–2.4.0 (54–72 clicks), with 1.2.0–1.8.0 labelled as AeroPress/Moka/Drip territory. A user grinding for pour-over found our start point too fine. Need more Q Air / Q2 user data to decide whether to adopt `methodOverrides` for V60. |
+
 ## License
 
 MIT License
