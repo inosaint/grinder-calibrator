@@ -930,6 +930,22 @@
       const density = (roast !== null && altitude !== null) ? deriveDensity(roast, altitude) : null;
       const guide   = process ? PROCESSING_GUIDE.find(p => p.id === process) : null;
 
+      useEffect(() => {
+        if (!process || !roast || !altitude) return;
+        const t = setTimeout(() => {
+          posthog.capture('dialer_result_shown', {
+            process,
+            roast,
+            altitude,
+            grinder_id: grinderId,
+            grinder_name: `${grinder.name} ${grinder.model}`.trim(),
+            density,
+            combo: `${process}·${roast}·${altitude}`,
+          });
+        }, 800);
+        return () => clearTimeout(t);
+      }, [process, roast, altitude, grinderId]);
+
       const pillBase = {
         fontFamily: '"DM Mono", monospace',
         boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 1px 2px rgba(0,0,0,0.5)',
@@ -1003,7 +1019,7 @@
             <div className="-mx-1 overflow-x-auto">
               <div className="flex gap-1.5 px-1">
                 {PROCESSING_GUIDE.map(p => (
-                  <Pill key={p.id} label={p.label} active={process === p.id} onClick={() => setProcess(p.id)} />
+                  <Pill key={p.id} label={p.label} active={process === p.id} onClick={() => { setProcess(p.id); posthog.capture('dialer_option_selected', { type: 'process', value: p.id, label: p.label }); }} />
                 ))}
               </div>
             </div>
@@ -1014,7 +1030,7 @@
             <div className="text-[9px] tracking-[0.08em] uppercase text-stone-500 mb-2" style={{ fontFamily: '"DM Mono", monospace' }}>Roast profile</div>
             <div className="flex gap-1.5">
               {[['filter','Filter / Omni'],['espresso','Espresso'],['unknown','Not listed']].map(([id, lbl]) => (
-                <Pill key={id} label={lbl} active={roast === id} onClick={() => setRoast(id)} />
+                <Pill key={id} label={lbl} active={roast === id} onClick={() => { setRoast(id); posthog.capture('dialer_option_selected', { type: 'roast', value: id, label: lbl }); }} />
               ))}
             </div>
           </div>
@@ -1024,7 +1040,7 @@
             <div className="text-[9px] tracking-[0.08em] uppercase text-stone-500 mb-2" style={{ fontFamily: '"DM Mono", monospace' }}>Altitude</div>
             <div className="flex gap-1.5">
               {[['high','High (>1400m)'],['low','Low (<1400m)'],['unknown','Not listed']].map(([id, lbl]) => (
-                <Pill key={id} label={lbl} active={altitude === id} onClick={() => setAlt(id)} />
+                <Pill key={id} label={lbl} active={altitude === id} onClick={() => { setAlt(id); posthog.capture('dialer_option_selected', { type: 'altitude', value: id, label: lbl }); }} />
               ))}
             </div>
           </div>
@@ -1032,7 +1048,7 @@
           {/* Grinder */}
           <div>
             <div className="text-[9px] tracking-[0.08em] uppercase text-stone-500 mb-2" style={{ fontFamily: '"DM Mono", monospace' }}>Grinder</div>
-            <GrinderPicker value={grinderId} onChange={setGrinderId} />
+            <GrinderPicker value={grinderId} onChange={(id) => { setGrinderId(id); posthog.capture('dialer_option_selected', { type: 'grinder', value: id, label: `${GRINDERS[id].name} ${GRINDERS[id].model}`.trim() }); }} />
           </div>
 
           {/* Result */}
@@ -1309,7 +1325,7 @@
                 return (
                   <button
                     key={id}
-                    onClick={() => setTab(id)}
+                    onClick={() => { setTab(id); posthog.capture('tab_switched', { tab: id }); }}
                     className="transition-all active:scale-95"
                     style={{
                       borderRadius: 9999,
