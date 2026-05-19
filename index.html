@@ -933,14 +933,26 @@
       useEffect(() => {
         if (!process || !roast || !altitude) return;
         const t = setTimeout(() => {
+          const g = PROCESSING_GUIDE.find(p => p.id === process);
+          const d = deriveDensity(roast, altitude);
+          const buildOutput = (rec) => ({
+            clicks: [micronsToClickGuide(grinder, rec.um[0]), micronsToClickGuide(grinder, rec.um[1])],
+            clicks_formatted: `${formatClickString(grinder, micronsToClickGuide(grinder, rec.um[0]))} – ${formatClickString(grinder, micronsToClickGuide(grinder, rec.um[1]))}`,
+            microns: rec.um,
+            temp: rec.temp,
+          });
+          const suggestion = d === 'both'
+            ? { low: buildOutput(g.low), high: buildOutput(g.high) }
+            : { [d]: buildOutput(g[d]) };
           posthog.capture('dialer_result_shown', {
             process,
             roast,
             altitude,
             grinder_id: grinderId,
             grinder_name: `${grinder.name} ${grinder.model}`.trim(),
-            density,
+            density: d,
             combo: `${process}·${roast}·${altitude}`,
+            suggestion,
           });
         }, 800);
         return () => clearTimeout(t);
