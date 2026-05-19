@@ -1099,7 +1099,7 @@
       const audioRef = useRef(new ClickAudio());
       const [soundOn, setSoundOn] = useState(true);
       const [historyOpen, setHistoryOpen] = useState(false);
-      const [tab, setTab] = useState('calibrate');
+      const [tab, setTab] = useState(() => window.location.hash === '#dialer' ? 'guide' : 'calibrate');
       const [history, setHistory] = useState([]);
       const [methodId, setMethodId] = useState('v60');
       const [leftId, setLeftId] = useState('commandante');
@@ -1116,6 +1116,19 @@
       useEffect(() => {
         audioRef.current.enabled = soundOn;
       }, [soundOn]);
+
+      useEffect(() => {
+        const hash = tab === 'guide' ? '#dialer' : '#calibrator';
+        if (window.location.hash !== hash) window.history.replaceState(null, '', hash);
+      }, [tab]);
+
+      useEffect(() => {
+        const onHashChange = () => {
+          setTab(window.location.hash === '#dialer' ? 'guide' : 'calibrate');
+        };
+        window.addEventListener('hashchange', onHashChange);
+        return () => window.removeEventListener('hashchange', onHashChange);
+      }, []);
 
       useEffect(() => {
         const t = setTimeout(() => {
