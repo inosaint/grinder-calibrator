@@ -9,34 +9,44 @@ interface VideoBackgroundProps {
 }
 
 export const VideoBackground: React.FC<VideoBackgroundProps> = ({
-  src = staticFile("background.mp4"),
+  src = "background1.MOV",
   blur = 18,
   overlayOpacity = 0.72,
   startFrom = 0,
 }) => {
   return (
     <>
-      {/* Video layer — clipped to prevent blur edge fringing */}
+      {/*
+        Outer div clips to frame bounds.
+        Inner div expands beyond the clip to prevent blur from sampling
+        transparent edges — then the Video fills it via objectFit: cover.
+      */}
       <div style={{
         position: "absolute",
-        inset: -blur * 2,
+        inset: 0,
         overflow: "hidden",
       }}>
-        <Video
-          src={src}
-          startFrom={startFrom}
-          loop
-          muted
-          style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            filter: `blur(${blur}px)`,
-          }}
-        />
+        <div style={{
+          position: "absolute",
+          inset: -(blur * 2),
+          filter: `blur(${blur}px)`,
+        }}>
+          <Video
+            src={staticFile(src)}
+            startFrom={startFrom}
+            loop
+            muted
+            style={{
+              display: "block",
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+            }}
+          />
+        </div>
       </div>
 
-      {/* Dark overlay — preserves the earthy dark palette for readability */}
+      {/* Dark overlay — keeps earthy palette and ensures text readability */}
       <div style={{
         position: "absolute",
         inset: 0,
