@@ -4,8 +4,9 @@
   "description": "Remotion intro video for grindsize.in",
   "scripts": {
     "start": "bunx remotion studio src/index.ts",
-    "build": "bunx remotion render src/index.ts GrinderIntro out/intro.mp4",
-    "render": "bunx remotion render src/index.ts GrinderIntro out/intro.mp4"
+    "render:hook": "bunx remotion render src/index.ts GrinderHook out/hook.mp4",
+    "render:outro": "bunx remotion render src/index.ts GrinderOutro out/outro.mp4",
+    "render:all": "bun run render:hook && bun run render:outro"
   },
   "dependencies": {
     "@remotion/google-fonts": "^4.0.0",

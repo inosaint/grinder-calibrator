@@ -14,18 +14,15 @@ export const FONTS = {
   serif: "'Bodoni Moda', Georgia, serif",
 } as const;
 
-// Frame timing (30fps, 450 total frames = 15s)
 export const TIMING = {
   fps: 30,
-  totalFrames: 450,
-  titleStart: 0,
-  titleDuration: 90,    // 0–90   (3s)
-  problemStart: 90,
-  problemDuration: 105, // 90–195 (3.5s)
-  dialStart: 195,
-  dialDuration: 165,    // 195–360 (5.5s)
-  solveStart: 360,
-  solveDuration: 60,    // 360–420 (2s)
-  domainStart: 420,
-  domainDuration: 30,   // 420–450 (1s)
+
+  // GrinderHook composition (9s) — rendered before demo footage
+  introDuration: 75,   // 2.5s — "Introducing Grindsize.in"
+  hookDuration: 90,    // 3s   — "Got a recipe for a C40 but you own a Timemore?"
+  bridgeDuration: 90,  // 3s   — "With Grindsize.in, it's easy to find out."
+  hookTotal: 255,
+
+  // GrinderOutro composition (4s) — rendered after demo footage
+  outroDuration: 120,  // 4s
 } as const;

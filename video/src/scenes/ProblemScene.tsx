@@ -2,6 +2,7 @@ import React from "react";
 import { useCurrentFrame, interpolate } from "remotion";
 import { COLORS, FONTS } from "../constants";
 import { GrainOverlay } from "../components/GrainOverlay";
+import { VideoBackground } from "../components/VideoBackground";
 
 export const ProblemScene: React.FC = () => {
   const frame = useCurrentFrame();
@@ -29,23 +30,32 @@ export const ProblemScene: React.FC = () => {
     <div style={{
       width: "100%",
       height: "100%",
-      background: `radial-gradient(ellipse at top, #1a1715 0%, #0a0807 60%, ${COLORS.bg} 100%)`,
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
+      background: "#050403",
       position: "relative",
-      gap: 24,
     }}>
+      {/* Continue from where the title video left off to avoid a visible restart */}
+      <VideoBackground startFrom={90} />
+
+      <div style={{
+        position: "relative",
+        width: "100%",
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 24,
+      }}>
+        <div style={lineStyle(line1Opacity, line1Y)}>
+          Got a recipe for a <span style={{ color: COLORS.accentGold }}>C40</span>?
+        </div>
+
+        <div style={lineStyle(line2Opacity, line2Y)}>
+          But you own a <span style={{ color: COLORS.accentTan }}>Timemore</span>?
+        </div>
+      </div>
+
       <GrainOverlay />
-
-      <div style={lineStyle(line1Opacity, line1Y)}>
-        Got a recipe for a <span style={{ color: COLORS.accentGold }}>C40</span>?
-      </div>
-
-      <div style={lineStyle(line2Opacity, line2Y)}>
-        But you own a <span style={{ color: COLORS.accentTan }}>Timemore</span>?
-      </div>
     </div>
   );
 };
