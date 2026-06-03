@@ -119,6 +119,43 @@
         </svg>
       );
     }
+    function PlayIcon({ size = 24 }) {
+      return (
+        <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="currentColor" stroke="none">
+          <polygon points="5 3 19 12 5 21 5 3"/>
+        </svg>
+      );
+    }
+    function PauseIcon({ size = 24 }) {
+      return (
+        <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="currentColor" stroke="none">
+          <rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>
+        </svg>
+      );
+    }
+    function RotateCcwIcon({ size = 24 }) {
+      return (
+        <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+          <path d="M3 3v5h5"/>
+        </svg>
+      );
+    }
+    function ArrowLeftIcon({ size = 24 }) {
+      return (
+        <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <line x1="19" y1="12" x2="5" y2="12"/>
+          <polyline points="12 19 5 12 12 5"/>
+        </svg>
+      );
+    }
+    function ChevronRightIcon({ size = 24 }) {
+      return (
+        <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="9 18 15 12 9 6"/>
+        </svg>
+      );
+    }
 
     // ========== BREW METHOD RANGES (single source of truth, in microns) ==========
     // Derived from Honest Coffee Guide's Comandante C40 ranges × 30 µm/click.
@@ -311,7 +348,7 @@
       },
       baratza_encore: {
         id: 'baratza_encore',
-        name: 'Baratza Encore',
+        name: 'Baratza',
         model: 'Encore',
         subtitle: 'Encore · 40 mm M3 conical',
         minClick: 0,
@@ -1029,6 +1066,163 @@
       );
     }
 
+    function RecipeWorkflow({ brew, selectedRecipe, grinder, onClose }) {
+      const [step, setStep] = useState(0);
+      const [elapsed, setElapsed] = useState(0);
+      const [running, setRunning] = useState(false);
+      const intervalRef = useRef(null);
+
+      const totalSteps = selectedRecipe.steps.length;
+
+      useEffect(() => {
+        if (running) {
+          intervalRef.current = setInterval(() => setElapsed(e => e + 1), 1000);
+        } else {
+          clearInterval(intervalRef.current);
+        }
+        return () => clearInterval(intervalRef.current);
+      }, [running]);
+
+      function resetTimer() {
+        setRunning(false);
+        setElapsed(0);
+      }
+
+      function goStep(n) {
+        setStep(n);
+        resetTimer();
+      }
+
+      const mm = String(Math.floor(elapsed / 60)).padStart(2, '0');
+      const ss = String(elapsed % 60).padStart(2, '0');
+
+      const monoStyle = { fontFamily: '"DM Mono", monospace' };
+
+      return (
+        <div className="flex flex-col h-full" style={{ minHeight: 420 }}>
+          {/* Header */}
+          <div className="flex items-center gap-3 mb-6">
+            <button
+              onClick={onClose}
+              className="flex items-center justify-center w-8 h-8 rounded-md transition-colors"
+              style={{ background: '#1a1714', border: '1px solid #2a2520', color: '#a8a098' }}
+            >
+              <ArrowLeftIcon size={14} />
+            </button>
+            <div>
+              <div className="text-[9px] tracking-[0.08em] uppercase" style={{ color: '#6a8a7a', ...monoStyle }}>{brew.label}</div>
+              <div className="text-[11px] tracking-[0.06em] uppercase" style={{ color: '#c8c0b0', ...monoStyle }}>{selectedRecipe.name}</div>
+            </div>
+            <div className="ml-auto text-[9px] tracking-[0.06em] uppercase" style={{ color: '#4a4a44', ...monoStyle }}>
+              {step + 1} / {totalSteps}
+            </div>
+          </div>
+
+          {/* Step progress dots */}
+          <div className="flex gap-1.5 mb-6">
+            {selectedRecipe.steps.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => goStep(i)}
+                className="h-1 rounded-full transition-all"
+                style={{
+                  flex: i === step ? '2 1 0' : '1 1 0',
+                  background: i < step ? '#6a8a7a' : i === step ? '#9bb086' : '#2a2520',
+                }}
+              />
+            ))}
+          </div>
+
+          {/* Step text */}
+          <div
+            className="flex-1 px-4 py-4 rounded-md mb-6"
+            style={{ background: 'linear-gradient(180deg, #141c14 0%, #0a100a 100%)', border: '1px solid #1a3020' }}
+          >
+            <div className="text-[9px] tracking-[0.08em] uppercase mb-3" style={{ color: '#6a9a7a', ...monoStyle }}>
+              Step {step + 1}
+            </div>
+            <div className="text-[13px] leading-relaxed" style={{ color: '#c8c0b0', ...monoStyle }}>
+              {selectedRecipe.steps[step]}
+            </div>
+          </div>
+
+          {/* Timer */}
+          <div className="flex flex-col items-center gap-4 mb-6">
+            <div
+              className="text-[40px] tabular-nums leading-none tracking-[-0.02em]"
+              style={{ color: running ? '#9bb086' : '#4a4a44', ...monoStyle }}
+            >
+              {mm}:{ss}
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={resetTimer}
+                className="flex items-center justify-center w-10 h-10 rounded-full transition-all"
+                style={{ background: '#1a1714', border: '1px solid #2a2520', color: '#6a6a64' }}
+              >
+                <RotateCcwIcon size={14} />
+              </button>
+              <button
+                onClick={() => setRunning(r => !r)}
+                className="flex items-center justify-center w-14 h-14 rounded-full transition-all"
+                style={{
+                  background: running
+                    ? 'linear-gradient(180deg, #3a5030 0%, #243220 100%)'
+                    : 'linear-gradient(180deg, #9bb086 0%, #6a8a5a 100%)',
+                  border: running ? '1px solid #2a4020' : '1px solid #5a7a4a',
+                  color: running ? '#9bb086' : '#0a0a08',
+                  boxShadow: running ? 'none' : '0 2px 8px rgba(0,0,0,0.4)',
+                }}
+              >
+                {running ? <PauseIcon size={18} /> : <PlayIcon size={18} />}
+              </button>
+              <div className="w-10 h-10" />
+            </div>
+          </div>
+
+          {/* Prev / Next */}
+          <div className="flex gap-3">
+            {step > 0 && (
+              <button
+                onClick={() => goStep(step - 1)}
+                className="flex-1 py-2.5 rounded-md text-[10px] tracking-[0.06em] uppercase transition-all"
+                style={{ background: '#1a1714', border: '1px solid #2a2520', color: '#6a6a64', ...monoStyle }}
+              >
+                Previous
+              </button>
+            )}
+            {step < totalSteps - 1 ? (
+              <button
+                onClick={() => goStep(step + 1)}
+                className="flex-1 py-2.5 rounded-md text-[10px] tracking-[0.06em] uppercase flex items-center justify-center gap-2 transition-all"
+                style={{
+                  background: 'linear-gradient(180deg, #1f2a1f 0%, #141c14 100%)',
+                  border: '1px solid #2a4020',
+                  color: '#9bb086',
+                  ...monoStyle,
+                }}
+              >
+                Next step <ChevronRightIcon size={12} />
+              </button>
+            ) : (
+              <button
+                onClick={onClose}
+                className="flex-1 py-2.5 rounded-md text-[10px] tracking-[0.06em] uppercase transition-all"
+                style={{
+                  background: 'linear-gradient(180deg, #2a3020 0%, #1a2014 100%)',
+                  border: '1px solid #3a5030',
+                  color: '#9bb086',
+                  ...monoStyle,
+                }}
+              >
+                Done
+              </button>
+            )}
+          </div>
+        </div>
+      );
+    }
+
     // ========== BEAN GUIDE ==========
     function BeanGuide() {
       const [process, setProcess] = useState(null);
@@ -1043,6 +1237,12 @@
       const guide   = process ? PROCESSING_GUIDE.find(p => p.id === process) : null;
       const brew = brewMethod ? BREW_GUIDE.find(b => b.id === brewMethod) : null;
       const selectedRecipe = brew && recipe !== null ? brew.recipes[recipe] : null;
+
+      const [workflowActive, setWorkflowActive] = useState(false);
+
+      useEffect(() => {
+        if (!selectedRecipe) setWorkflowActive(false);
+      }, [selectedRecipe]);
 
       useEffect(() => {
         if (!process || !roast || !altitude) return;
@@ -1148,6 +1348,17 @@
 
       const showResult = guide && density;
 
+      if (workflowActive && selectedRecipe) {
+        return (
+          <RecipeWorkflow
+            brew={brew}
+            selectedRecipe={selectedRecipe}
+            grinder={grinder}
+            onClose={() => setWorkflowActive(false)}
+          />
+        );
+      }
+
       return (
         <div className="space-y-4">
           {/* Process */}
@@ -1238,19 +1449,23 @@
                 )}
               </div>
               {selectedRecipe && (
-                <div className="mt-3 px-3 py-3 rounded-md" style={{ background: 'linear-gradient(180deg, #121212 0%, #0e0e0e 100%)', border: '1px solid #1e1e1e' }}>
-                  <div className="text-[9px] tracking-[0.08em] uppercase mb-2" style={{ color: '#6a8a7a', fontFamily: '"DM Mono", monospace' }}>
-                    {brew.label} · {selectedRecipe.name}
-                  </div>
-                  <ol className="space-y-1.5">
-                    {selectedRecipe.steps.map((step, i) => (
-                      <li key={i} className="flex gap-2 text-[10px] leading-relaxed" style={{ color: '#a8a098', fontFamily: '"DM Mono", monospace' }}>
-                        <span className="flex-shrink-0 tabular-nums" style={{ color: '#6a8a7a' }}>{i + 1}.</span>
-                        <span>{step}</span>
-                      </li>
-                    ))}
-                  </ol>
-                </div>
+                <button
+                  onClick={() => setWorkflowActive(true)}
+                  className="mt-3 w-full px-4 py-3 rounded-md flex items-center justify-between transition-all"
+                  style={{
+                    background: 'linear-gradient(180deg, #1f2a1f 0%, #141c14 100%)',
+                    border: '1px solid #2a4020',
+                    fontFamily: '"DM Mono", monospace',
+                  }}
+                >
+                  <span className="text-[11px] tracking-[0.06em] uppercase" style={{ color: '#9bb086' }}>
+                    {selectedRecipe.name} · {selectedRecipe.ratio}
+                  </span>
+                  <span className="flex items-center gap-1.5" style={{ color: '#6a8a7a' }}>
+                    <span className="text-[9px] tracking-[0.08em] uppercase">Start</span>
+                    <PlayIcon size={10} />
+                  </span>
+                </button>
               )}
               <div className="mt-3 text-[8px] tracking-[0.04em] text-stone-600 leading-relaxed" style={{ fontFamily: '"DM Mono", monospace' }}>
                 Starting point — adjust ±1–2 clicks to taste.{' '}
