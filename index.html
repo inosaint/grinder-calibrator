@@ -170,6 +170,16 @@
       cold:      [900, 1200],
     };
 
+    const DIALER_METHOD_RANGES = {
+      espresso:     [210, 390],
+      moka:         [420, 720],
+      aeropress:    [360, 1050],
+      v60:          [450, 750],
+      chemex:       [750, 1020],
+      french_press: [780, 1200],
+      cold_brew:    [800, 1200],
+    };
+
     // ========== GRINDER CONFIG ==========
     const GRINDERS = {
       commandante: {
@@ -423,13 +433,27 @@
 
     // ========== PROCESSING GUIDE DATA ==========
     const PROCESSING_GUIDE = [
-      { id: 'washed',          label: 'Washed',           low: { um: [600,700],  temp: [92,93] }, high: { um: [700,800],  temp: [92,93] } },
-      { id: 'exp_washed',      label: 'Exp. Washed',      low: { um: [850,900],  temp: [92,93] }, high: { um: [700,800],  temp: [90,92] } },
-      { id: 'honey',           label: 'Honey',            low: { um: [650,700],  temp: [90,92] }, high: { um: [700,800],  temp: [90,92] } },
-      { id: 'exp_honey',       label: 'Exp./Ext. Honey',  low: { um: [600,700],  temp: [91,93] }, high: { um: [700,800],  temp: [90,92] } },
-      { id: 'classic_natural', label: 'Classic Natural',  low: { um: [700,750],  temp: [88,92] }, high: { um: [550,650],  temp: [90,92] } },
-      { id: 'exp_natural',     label: 'Exp./Ext. Natural',low: { um: [550,650],  temp: [87,90] }, high: { um: [500,650],  temp: [90,91] } },
-      { id: 'infused',         label: 'Infused / Others', low: { um: [550,650],  temp: [87,90] }, high: { um: [500,550],  temp: [88,92] } },
+      { id: 'washed',          label: 'Washed',
+        low:  { um: [600,700],  temp: [92,93], pos: [0.30, 0.50] },
+        high: { um: [700,800],  temp: [92,93], pos: [0.55, 0.72] } },
+      { id: 'exp_washed',      label: 'Exp. Washed',
+        low:  { um: [850,900],  temp: [92,93], pos: [0.40, 0.60] },
+        high: { um: [700,800],  temp: [90,92], pos: [0.45, 0.65] } },
+      { id: 'honey',           label: 'Honey',
+        low:  { um: [650,700],  temp: [90,92], pos: [0.25, 0.45] },
+        high: { um: [700,800],  temp: [90,92], pos: [0.45, 0.62] } },
+      { id: 'exp_honey',       label: 'Exp./Ext. Honey',
+        low:  { um: [600,700],  temp: [91,93], pos: [0.20, 0.40] },
+        high: { um: [700,800],  temp: [90,92], pos: [0.40, 0.58] } },
+      { id: 'classic_natural', label: 'Classic Natural',
+        low:  { um: [700,750],  temp: [88,92], pos: [0.18, 0.38] },
+        high: { um: [550,650],  temp: [90,92], pos: [0.42, 0.60] } },
+      { id: 'exp_natural',     label: 'Exp./Ext. Natural',
+        low:  { um: [550,650],  temp: [87,90], pos: [0.12, 0.32] },
+        high: { um: [500,650],  temp: [90,91], pos: [0.35, 0.52] } },
+      { id: 'infused',         label: 'Infused / Others',
+        low:  { um: [550,650],  temp: [87,90], pos: [0.10, 0.28] },
+        high: { um: [500,550],  temp: [88,92], pos: [0.30, 0.48] } },
     ];
 
     const BREW_GUIDE = [
@@ -521,6 +545,13 @@
       if (highSignals > lowSignals) return 'high';
       if (lowSignals > highSignals) return 'low';
       return 'both';
+    }
+
+    function dialerMicrons(rec, brewMethodId) {
+      if (!brewMethodId || !DIALER_METHOD_RANGES[brewMethodId] || !rec.pos) return rec.um;
+      const [lo, hi] = DIALER_METHOD_RANGES[brewMethodId];
+      const span = hi - lo;
+      return [Math.round(lo + rec.pos[0] * span), Math.round(lo + rec.pos[1] * span)];
     }
 
     // ========== AUDIO ENGINE ==========
@@ -1249,12 +1280,15 @@
         const t = setTimeout(() => {
           const g = PROCESSING_GUIDE.find(p => p.id === process);
           const d = deriveDensity(roast, altitude);
-          const buildOutput = (rec) => ({
-            clicks: grinder ? [micronsToClickGuide(grinder, rec.um[0]), micronsToClickGuide(grinder, rec.um[1])] : null,
-            clicks_formatted: grinder ? `${formatClickString(grinder, micronsToClickGuide(grinder, rec.um[0]))} – ${formatClickString(grinder, micronsToClickGuide(grinder, rec.um[1]))}` : null,
-            microns: rec.um,
-            temp: rec.temp,
-          });
+          const buildOutput = (rec) => {
+            const um = dialerMicrons(rec, brewMethod);
+            return {
+              clicks: grinder ? [micronsToClickGuide(grinder, um[0]), micronsToClickGuide(grinder, um[1])] : null,
+              clicks_formatted: grinder ? `${formatClickString(grinder, micronsToClickGuide(grinder, um[0]))} – ${formatClickString(grinder, micronsToClickGuide(grinder, um[1]))}` : null,
+              microns: um,
+              temp: rec.temp,
+            };
+          };
           const suggestion = d === 'both'
             ? { low: buildOutput(g.low), high: buildOutput(g.high) }
             : { [d]: buildOutput(g[d]) };
@@ -1306,8 +1340,9 @@
       }
 
       function ResultCard({ rec, densityLabel, grinder: cardGrinder, selectedRecipe: cardRecipe }) {
-        const lo = micronsToClickGuide(cardGrinder || grinder, rec.um[0]);
-        const hi = micronsToClickGuide(cardGrinder || grinder, rec.um[1]);
+        const um = dialerMicrons(rec, brewMethod);
+        const lo = micronsToClickGuide(cardGrinder || grinder, um[0]);
+        const hi = micronsToClickGuide(cardGrinder || grinder, um[1]);
         const g = cardGrinder || grinder;
         return (
           <div
@@ -1336,12 +1371,20 @@
             )}
             <div className="flex items-baseline gap-1.5 mb-1">
               <span className="text-[11px] tracking-[0.06em] uppercase text-stone-400" style={{ fontFamily: '"DM Mono", monospace', minWidth: 52 }}>Microns</span>
-              <span className="text-[13px] tabular-nums" style={{ color: '#c8c0b0', fontFamily: '"DM Mono", monospace' }}>{rec.um[0]}–{rec.um[1]} µm</span>
+              <span className="text-[13px] tabular-nums" style={{ color: '#c8c0b0', fontFamily: '"DM Mono", monospace' }}>{um[0]}–{um[1]} µm</span>
             </div>
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-[11px] tracking-[0.06em] uppercase text-stone-400" style={{ fontFamily: '"DM Mono", monospace', minWidth: 52 }}>Temp</span>
-              <span className="text-[13px] tabular-nums" style={{ color: '#c8c0b0', fontFamily: '"DM Mono", monospace' }}>{rec.temp[0]}–{rec.temp[1]}°C</span>
-            </div>
+            {brewMethod !== 'cold_brew' && (
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-[11px] tracking-[0.06em] uppercase text-stone-400" style={{ fontFamily: '"DM Mono", monospace', minWidth: 52 }}>Temp</span>
+                <span className="text-[13px] tabular-nums" style={{ color: '#c8c0b0', fontFamily: '"DM Mono", monospace' }}>{rec.temp[0]}–{rec.temp[1]}°C</span>
+              </div>
+            )}
+            {brewMethod === 'cold_brew' && (
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-[11px] tracking-[0.06em] uppercase text-stone-400" style={{ fontFamily: '"DM Mono", monospace', minWidth: 52 }}>Temp</span>
+                <span className="text-[13px]" style={{ color: '#6a8a7a', fontFamily: '"DM Mono", monospace' }}>Cold / ambient</span>
+              </div>
+            )}
           </div>
         );
       }
