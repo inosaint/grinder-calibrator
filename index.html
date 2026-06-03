@@ -309,6 +309,23 @@
         accentColor: '#c47a5a',
         dialNotation: 'numbered',
       },
+      baratza_encore: {
+        id: 'baratza_encore',
+        name: 'Baratza Encore',
+        model: 'Encore',
+        subtitle: 'Encore · 40 mm M3 conical',
+        minClick: 0,
+        maxClick: 40,
+        // 26 µm/click + 270 µm zeroOffset back-fits HCG's Encore brew-method settings
+        // to within ~1 click on espresso/moka/V60/AeroPress. The Encore has a large
+        // baseline burr gap (HCG floor ~250 µm), so a zeroOffset=0 model fails. Step
+        // size is non-uniform in hardware (~90 µm/step at the coarse end); this linear
+        // fit is the best single-line approximation of HCG's bands.
+        micronsPerClick: 26,
+        zeroOffset: 270,
+        majorTick: 5,
+        accentColor: '#7a8a94',
+      },
     };
 
     function formatClickString(grinder, click) {
@@ -376,6 +393,16 @@
       { id: 'classic_natural', label: 'Classic Natural',  low: { um: [700,750],  temp: [88,92] }, high: { um: [550,650],  temp: [90,92] } },
       { id: 'exp_natural',     label: 'Exp./Ext. Natural',low: { um: [550,650],  temp: [87,90] }, high: { um: [500,650],  temp: [90,91] } },
       { id: 'infused',         label: 'Infused / Others', low: { um: [550,650],  temp: [87,90] }, high: { um: [500,550],  temp: [88,92] } },
+    ];
+
+    const BREW_GUIDE = [
+      { id: 'v60',          label: 'V60',          ratio: '1:15–17' },
+      { id: 'aeropress',    label: 'AeroPress',    ratio: '1:13–16' },
+      { id: 'chemex',       label: 'Chemex',       ratio: '1:15–17' },
+      { id: 'french_press', label: 'French Press', ratio: '1:15–17' },
+      { id: 'espresso',     label: 'Espresso',     ratio: '1:2–2.5' },
+      { id: 'moka',         label: 'Moka Pot',     ratio: '1:7–10' },
+      { id: 'cold_brew',    label: 'Cold Brew',    ratio: '1:8–10' },
     ];
 
     function deriveDensity(roast, altitude) {
@@ -638,7 +665,7 @@
 
             <svg className="absolute inset-0" viewBox="0 0 280 280" style={{ pointerEvents: 'none' }}>
               <defs>
-                <radialGradient id={`bezelGrad-${grinder.id}`} cx="30%" cy="20%">
+                <radialGradient id={`bezelGrad-${grinder.id}`} cx="30%" cy="40%">
                   <stop offset="0%" stopColor="#3a3530" />
                   <stop offset="60%" stopColor="#1a1715" />
                   <stop offset="100%" stopColor="#050403" />
@@ -871,24 +898,25 @@
     }
 
     // ========== GRINDER PICKER ==========
-    function GrinderPicker({ value, onChange }) {
+    function GrinderPicker({ value, onChange, nullable = false }) {
       const [open, setOpen] = useState(false);
       const options = Object.values(GRINDERS);
-      const current = GRINDERS[value];
+      const current = value ? GRINDERS[value] : null;
 
       return (
         <div className="relative">
           <button
             onClick={() => setOpen(!open)}
-            className="w-full px-3 py-2 rounded-md flex items-center justify-between text-stone-200 text-xs tracking-wider"
+            className="w-full px-3 py-2 rounded-md flex items-center justify-between text-xs tracking-wider"
             style={{
               background: 'linear-gradient(180deg, #1f1c1a 0%, #14110f 100%)',
               boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 1px 2px rgba(0,0,0,0.5)',
               border: '1px solid #0a0908',
               fontFamily: '"DM Mono", monospace',
+              color: current ? '#e2e8f0' : '#6b7280',
             }}
           >
-            <span className="uppercase">{current.name}{(current.variants || current.model) ? ` ${current.variants || current.model}` : ''}</span>
+            <span className="uppercase">{current ? `${current.name}${(current.variants || current.model) ? ` ${current.variants || current.model}` : ''}` : 'None — show µm only'}</span>
             <ChevronDownIcon size={14} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
           </button>
           {open && (
@@ -900,6 +928,15 @@
                 border: '1px solid #0a0908',
               }}
             >
+              {nullable && (
+                <button
+                  onClick={() => { onChange(null); setOpen(false); }}
+                  className="w-full px-3 py-2 text-left text-stone-500 text-xs tracking-wider uppercase hover:bg-stone-800 transition-colors"
+                  style={{ fontFamily: '"DM Mono", monospace' }}
+                >
+                  None — show µm only
+                </button>
+              )}
               {options.map((opt) => (
                 <button
                   key={opt.id}
@@ -924,8 +961,9 @@
       const [process, setProcess] = useState(null);
       const [roast, setRoast]     = useState(null);
       const [altitude, setAlt]    = useState(null);
-      const [grinderId, setGrinderId] = useState('commandante');
-      const grinder = GRINDERS[grinderId];
+      const [brewMethod, setBrewMethod] = useState(null);
+      const [grinderId, setGrinderId] = useState('timemore_s3');
+      const grinder = grinderId ? GRINDERS[grinderId] : null;
 
       const density = (roast !== null && altitude !== null) ? deriveDensity(roast, altitude) : null;
       const guide   = process ? PROCESSING_GUIDE.find(p => p.id === process) : null;
