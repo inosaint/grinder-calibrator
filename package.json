@@ -1,0 +1,19 @@
+{
+  "name": "grinder-calibrator",
+  "private": true,
+  "scripts": {
+    "build": "babel src/app.jsx -o app.js",
+    "watch": "babel src/app.jsx -o app.js --watch"
+  },
+  "babel": {
+    "presets": [
+      ["@babel/preset-env", { "targets": { "esmodules": true }, "modules": false }],
+      ["@babel/preset-react", { "runtime": "classic" }]
+    ]
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.24.0",
+    "@babel/preset-env": "^7.24.0",
+    "@babel/preset-react": "^7.24.0"
+  }
+}
