@@ -559,6 +559,12 @@
       constructor() {
         this.ctx = null;
         this.enabled = true;
+        this.hapticEnabled = true;
+      }
+      haptic(variant = 'detent') {
+        if (!this.hapticEnabled || !navigator.vibrate) return;
+        const patterns = { detent: [12], edge: [8, 30, 8], snap: [20] };
+        navigator.vibrate(patterns[variant] || [12]);
       }
       init() {
         if (!this.ctx) {
@@ -569,6 +575,7 @@
         if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
       }
       click(variant = 'detent') {
+        this.haptic(variant);
         if (!this.enabled || !this.ctx) return;
         const t = this.ctx.currentTime;
 
@@ -1467,29 +1474,26 @@
                 )}
               </div>
               {brew && showResult && (
-                <div className="mt-1 space-y-2">
+                <div className="mt-1 space-y-1.5">
                   {brew.recipes.map((r, i) => (
                     <button
                       key={i}
                       onClick={() => { setActiveRecipe(r); setWorkflowActive(true); }}
-                      className="w-full px-4 py-3 rounded-md flex items-center justify-between transition-all"
+                      className="w-full px-4 py-2 rounded-md flex items-center justify-between transition-all"
                       style={{
-                        background: 'linear-gradient(180deg, #1f2a1f 0%, #141c14 100%)',
-                        border: '1px solid #2a4020',
+                        background: 'linear-gradient(180deg, #141c14 0%, #0a100a 100%)',
+                        border: '1px solid #1a3020',
                         fontFamily: '"DM Mono", monospace',
                       }}
                     >
-                      <div className="text-left">
-                        <div className="text-[11px] tracking-[0.06em] uppercase" style={{ color: '#9bb086' }}>
-                          {r.name}
-                        </div>
-                        <div className="text-[9px] tracking-[0.04em] mt-0.5" style={{ color: '#6a8a7a' }}>
-                          {r.ratio}
-                        </div>
-                      </div>
-                      <span className="flex items-center gap-1.5" style={{ color: '#6a8a7a' }}>
+                      <span className="text-[9px] tracking-[0.08em] uppercase" style={{ color: '#6a9a7a' }}>
+                        {r.name}
+                        <span style={{ color: '#2a4a34', margin: '0 0.4em' }}>·</span>
+                        {r.ratio}
+                      </span>
+                      <span className="flex items-center gap-1" style={{ color: '#3a6040' }}>
                         <span className="text-[9px] tracking-[0.08em] uppercase">Start</span>
-                        <PlayIcon size={10} />
+                        <PlayIcon size={8} />
                       </span>
                     </button>
                   ))}
@@ -1608,6 +1612,7 @@
 
       useEffect(() => {
         audioRef.current.enabled = soundOn;
+        audioRef.current.hapticEnabled = soundOn;
       }, [soundOn]);
 
       useEffect(() => {
