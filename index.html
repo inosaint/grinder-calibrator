@@ -4,16 +4,16 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Grind Size — Coffee Grinder Settings Calculator</title>
-  <meta name="description" content="Translate grind settings between hand grinders and get bean-based starting points for any brew method. Supports Comandante C40, Timemore S3/C2/C3, 1Zpresso ZP6/K-Ultra/Q Air, KINGrinder K6." />
+  <meta name="description" content="Translate grind settings between coffee grinders and get bean-based starting points for any brew method. Supports Comandante C40, Timemore S3/C2/C3, 1Zpresso ZP6/K-Ultra/Q Air, KINGrinder K6, Baratza Encore." />
   <link rel="canonical" href="https://grindsize.in/" />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://grindsize.in/" />
   <meta property="og:title" content="Grind Size — Coffee Grinder Settings Calculator" />
-  <meta property="og:description" content="Translate grind settings between hand grinders and get bean-based starting points for any brew method. Supports Comandante C40, Timemore S3/C2/C3, 1Zpresso ZP6/K-Ultra/Q Air, KINGrinder K6." />
+  <meta property="og:description" content="Translate grind settings between coffee grinders and get bean-based starting points for any brew method. Supports Comandante C40, Timemore S3/C2/C3, 1Zpresso ZP6/K-Ultra/Q Air, KINGrinder K6, Baratza Encore." />
   <meta property="og:image" content="https://grindsize.in/grinder-v1.png" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Grind Size — Coffee Grinder Settings Calculator" />
-  <meta name="twitter:description" content="Translate grind settings between hand grinders and get bean-based starting points for any brew method. Supports Comandante C40, Timemore S3/C2/C3, 1Zpresso ZP6/K-Ultra/Q Air, KINGrinder K6." />
+  <meta name="twitter:description" content="Translate grind settings between coffee grinders and get bean-based starting points for any brew method. Supports Comandante C40, Timemore S3/C2/C3, 1Zpresso ZP6/K-Ultra/Q Air, KINGrinder K6, Baratza Encore." />
   <meta name="twitter:image" content="https://grindsize.in/grinder-v1.png" />
   <script type="application/ld+json">
   {
@@ -21,7 +21,7 @@
     "@type": "WebApplication",
     "name": "Grind Size",
     "url": "https://grindsize.in/",
-    "description": "Translate grind settings between hand grinders and get bean-based starting points for any brew method. Supports Comandante C40, Timemore S3/C2/C3, 1Zpresso ZP6/K-Ultra/Q Air, KINGrinder K6.",
+    "description": "Translate grind settings between coffee grinders and get bean-based starting points for any brew method. Supports Comandante C40, Timemore S3/C2/C3, 1Zpresso ZP6/K-Ultra/Q Air, KINGrinder K6, Baratza Encore.",
     "applicationCategory": "UtilitiesApplication",
     "operatingSystem": "Any",
     "offers": {
@@ -30,10 +30,10 @@
       "priceCurrency": "USD"
     },
     "featureList": [
-      "Grind setting translation between hand grinders",
+      "Grind setting translation between coffee grinders (hand and electric)",
       "Brew method presets: V60, Espresso, AeroPress, Moka, Chemex, French Press, Cold Brew",
       "Bean-based grind recommendations by processing type, roast profile, and altitude",
-      "Supports Comandante C40, Timemore S3, Timemore C2, Timemore C3, 1Zpresso ZP6, 1Zpresso K-Ultra, 1Zpresso Q Air, KINGrinder K6"
+      "Supports Comandante C40, Timemore S3, Timemore C2, Timemore C3, 1Zpresso ZP6, 1Zpresso K-Ultra, 1Zpresso Q Air, KINGrinder K6, Baratza Encore"
     ],
     "author": {
       "@type": "Person",
@@ -396,13 +396,86 @@
     ];
 
     const BREW_GUIDE = [
-      { id: 'v60',          label: 'V60',          ratio: '1:15–17' },
-      { id: 'aeropress',    label: 'AeroPress',    ratio: '1:13–16' },
-      { id: 'chemex',       label: 'Chemex',       ratio: '1:15–17' },
-      { id: 'french_press', label: 'French Press', ratio: '1:15–17' },
-      { id: 'espresso',     label: 'Espresso',     ratio: '1:2–2.5' },
-      { id: 'moka',         label: 'Moka Pot',     ratio: '1:7–10' },
-      { id: 'cold_brew',    label: 'Cold Brew',    ratio: '1:8–10' },
+      { id: 'v60', label: 'V60', recipes: [
+        { name: 'Standard', ratio: '1:15–17', steps: [
+          'Rinse filter; preheat dripper and cup, discard rinse water',
+          'Add coffee, start timer — pour 2× weight for bloom, wait 30 s',
+          'Pour in slow spirals to 60% of total by 1:00',
+          'Finish pouring by 1:30–1:45; target draw-down by 2:30–3:00',
+        ]},
+        { name: 'Hoffmann', ratio: '1:16.7', steps: [
+          'Rinse filter; place upside-down on cup to pre-heat, discard water',
+          'Add coffee; pour 50g water to bloom for 45 s, swirl gently',
+          'Pour continuously to full weight, aiming for 3:30 total',
+          'Swirl finished brew in server before pouring',
+        ]},
+      ]},
+      { id: 'aeropress', label: 'AeroPress', recipes: [
+        { name: 'Standard', ratio: '1:13–16', steps: [
+          'Insert and rinse filter; set up in standard (non-inverted) position',
+          'Add coffee; pour all water at once and stir 10 s',
+          'Steep 1:00–1:30, then press slowly over 30 s',
+          'Dilute with hot water to taste',
+        ]},
+        { name: 'Inverted', ratio: '1:10–13', steps: [
+          'Invert brewer; add coffee and concentrated water',
+          'Stir 10 s; cap with rinsed filter, steep 2:00',
+          'Flip onto cup; press slowly and stop before hiss',
+          'Dilute 1:1 with hot water in cup',
+        ]},
+      ]},
+      { id: 'chemex', label: 'Chemex', recipes: [
+        { name: 'Standard', ratio: '1:15–17', steps: [
+          'Fold and rinse Chemex filter (3-layer side toward spout); discard rinse water',
+          'Add coffee; bloom with 2× weight for 45 s',
+          'Pour in slow spirals across 3–4 pours; finish by 4:00–4:30',
+          'Let drain fully — do not stir or swirl',
+        ]},
+      ]},
+      { id: 'french_press', label: 'French Press', recipes: [
+        { name: 'Standard', ratio: '1:15–17', steps: [
+          'Preheat press with hot water; discard',
+          'Add coffee; pour all water at once, stir briefly',
+          'Steep 4:00, then slowly press plunger',
+          'Decant immediately to avoid over-extraction',
+        ]},
+        { name: 'Hoffmann', ratio: '1:17', steps: [
+          'Add coffee; pour all water, stir top layer at 4:00',
+          'Scoop foam and grounds from surface; let settle 5:00 more',
+          'Pour gently without pressing — no plunger needed',
+          'Result: sediment-free cup without bitterness from pressing',
+        ]},
+      ]},
+      { id: 'espresso', label: 'Espresso', recipes: [
+        { name: 'Classic', ratio: '1:2–2.5', steps: [
+          'Pull a short test shot to check flow before committing',
+          'Distribute evenly and tamp with ~15 kg pressure',
+          'Pull shot: target 25–30 s for the listed ratio yield',
+          'Too fast (<20 s)? Grind finer. Too slow (>35 s)? Grind coarser',
+        ]},
+        { name: 'Lungo', ratio: '1:3–4', steps: [
+          'Same prep as classic — distribute and tamp evenly',
+          'Pull for 35–45 s; expect more bitter, floral notes',
+          'Best with lighter roasts that can handle longer extraction',
+          'Adjust grind coarser if shot chokes before target yield',
+        ]},
+      ]},
+      { id: 'moka', label: 'Moka Pot', recipes: [
+        { name: 'Standard', ratio: '1:7–10', steps: [
+          'Fill bottom chamber with hot water to the valve level',
+          'Add coffee loosely — do not tamp',
+          'Heat on medium-low; remove from heat when sputtering begins',
+          'Dilute 1:1 with hot water if desired',
+        ]},
+      ]},
+      { id: 'cold_brew', label: 'Cold Brew', recipes: [
+        { name: 'Standard', ratio: '1:8–10', steps: [
+          'Combine coffee and cold water; stir to wet all grounds',
+          'Cover and refrigerate 12–18 h (up to 24 h for bolder)',
+          'Strain through fine mesh or paper filter',
+          'Dilute 1:1 with water or milk before serving',
+        ]},
+      ]},
     ];
 
     function deriveDensity(roast, altitude) {
@@ -962,11 +1035,14 @@
       const [roast, setRoast]     = useState(null);
       const [altitude, setAlt]    = useState(null);
       const [brewMethod, setBrewMethod] = useState(null);
-      const [grinderId, setGrinderId] = useState('timemore_s3');
+      const [recipe, setRecipe] = useState(null);
+      const [grinderId, setGrinderId] = useState(() => localStorage.getItem('grindercal_last_grinder') || 'timemore_s3');
       const grinder = grinderId ? GRINDERS[grinderId] : null;
 
       const density = (roast !== null && altitude !== null) ? deriveDensity(roast, altitude) : null;
       const guide   = process ? PROCESSING_GUIDE.find(p => p.id === process) : null;
+      const brew = brewMethod ? BREW_GUIDE.find(b => b.id === brewMethod) : null;
+      const selectedRecipe = brew && recipe !== null ? brew.recipes[recipe] : null;
 
       useEffect(() => {
         if (!process || !roast || !altitude) return;
@@ -974,8 +1050,8 @@
           const g = PROCESSING_GUIDE.find(p => p.id === process);
           const d = deriveDensity(roast, altitude);
           const buildOutput = (rec) => ({
-            clicks: [micronsToClickGuide(grinder, rec.um[0]), micronsToClickGuide(grinder, rec.um[1])],
-            clicks_formatted: `${formatClickString(grinder, micronsToClickGuide(grinder, rec.um[0]))} – ${formatClickString(grinder, micronsToClickGuide(grinder, rec.um[1]))}`,
+            clicks: grinder ? [micronsToClickGuide(grinder, rec.um[0]), micronsToClickGuide(grinder, rec.um[1])] : null,
+            clicks_formatted: grinder ? `${formatClickString(grinder, micronsToClickGuide(grinder, rec.um[0]))} – ${formatClickString(grinder, micronsToClickGuide(grinder, rec.um[1]))}` : null,
             microns: rec.um,
             temp: rec.temp,
           });
@@ -987,14 +1063,16 @@
             roast,
             altitude,
             grinder_id: grinderId,
-            grinder_name: `${grinder.name} ${grinder.model}`.trim(),
+            grinder_name: grinder ? `${grinder.name} ${grinder.model}`.trim() : null,
             density: d,
             combo: `${process}·${roast}·${altitude}`,
             suggestion,
+            brew_method: brewMethod,
+            recipe_name: selectedRecipe ? selectedRecipe.name : null,
           });
         }, 800);
         return () => clearTimeout(t);
-      }, [process, roast, altitude, grinderId]);
+      }, [process, roast, altitude, grinderId, brewMethod, recipe]);
 
       const pillBase = {
         fontFamily: '"DM Mono", monospace',
@@ -1027,9 +1105,10 @@
         );
       }
 
-      function ResultCard({ rec, densityLabel }) {
-        const lo = micronsToClickGuide(grinder, rec.um[0]);
-        const hi = micronsToClickGuide(grinder, rec.um[1]);
+      function ResultCard({ rec, densityLabel, grinder: cardGrinder, selectedRecipe: cardRecipe }) {
+        const lo = micronsToClickGuide(cardGrinder || grinder, rec.um[0]);
+        const hi = micronsToClickGuide(cardGrinder || grinder, rec.um[1]);
+        const g = cardGrinder || grinder;
         return (
           <div
             className="flex-1 px-4 py-3 rounded-md"
@@ -1041,12 +1120,20 @@
             <div className="text-[9px] tracking-[0.08em] uppercase mb-2" style={{ color: '#6a9a7a', fontFamily: '"DM Mono", monospace' }}>
               {densityLabel} density
             </div>
-            <div className="flex items-baseline gap-1.5 mb-1">
-              <span className="text-[11px] tracking-[0.06em] uppercase text-stone-400" style={{ fontFamily: '"DM Mono", monospace', minWidth: 52 }}>Grind</span>
-              <span className="text-[18px] font-bold tabular-nums leading-none" style={{ color: '#9bb086', fontFamily: '"DM Mono", monospace', letterSpacing: '-0.02em' }}>
-                {formatClickString(grinder, lo)} – {formatClickString(grinder, hi)}
-              </span>
-            </div>
+            {g && (
+              <div className="flex items-baseline gap-1.5 mb-1">
+                <span className="text-[11px] tracking-[0.06em] uppercase text-stone-400" style={{ fontFamily: '"DM Mono", monospace', minWidth: 52 }}>Grind</span>
+                <span className="text-[18px] font-bold tabular-nums leading-none" style={{ color: '#9bb086', fontFamily: '"DM Mono", monospace', letterSpacing: '-0.02em' }}>
+                  {formatClickString(g, lo)} – {formatClickString(g, hi)}
+                </span>
+              </div>
+            )}
+            {cardRecipe && (
+              <div className="flex items-baseline gap-1.5 mb-1">
+                <span className="text-[11px] tracking-[0.06em] uppercase text-stone-400" style={{ fontFamily: '"DM Mono", monospace', minWidth: 52 }}>Ratio</span>
+                <span className="text-[13px] tabular-nums" style={{ color: '#c8c0b0', fontFamily: '"DM Mono", monospace' }}>{cardRecipe.ratio}</span>
+              </div>
+            )}
             <div className="flex items-baseline gap-1.5 mb-1">
               <span className="text-[11px] tracking-[0.06em] uppercase text-stone-400" style={{ fontFamily: '"DM Mono", monospace', minWidth: 52 }}>Microns</span>
               <span className="text-[13px] tabular-nums" style={{ color: '#c8c0b0', fontFamily: '"DM Mono", monospace' }}>{rec.um[0]}–{rec.um[1]} µm</span>
@@ -1095,28 +1182,76 @@
             </div>
           </div>
 
+          {/* Prep method */}
+          <div>
+            <div className="text-[9px] tracking-[0.08em] uppercase text-stone-500 mb-2" style={{ fontFamily: '"DM Mono", monospace' }}>Prep method</div>
+            <div className="-mx-1 overflow-x-auto">
+              <div className="flex gap-1.5 px-1">
+                {BREW_GUIDE.map(b => (
+                  <Pill key={b.id} label={b.label} active={brewMethod === b.id} onClick={() => {
+                    setBrewMethod(brewMethod === b.id ? null : b.id);
+                    setRecipe(null);
+                    posthog.capture('dialer_option_selected', { type: 'brew_method', value: b.id, label: b.label });
+                  }} />
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Recipe picker — only shown if brew has multiple recipes */}
+          {brew && brew.recipes.length > 1 && (
+            <div>
+              <div className="text-[9px] tracking-[0.08em] uppercase text-stone-500 mb-2" style={{ fontFamily: '"DM Mono", monospace' }}>Recipe</div>
+              <div className="flex gap-1.5">
+                {brew.recipes.map((r, i) => (
+                  <Pill key={i} label={r.name} active={recipe === i} onClick={() => setRecipe(recipe === i ? null : i)} />
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Grinder */}
           <div>
             <div className="text-[9px] tracking-[0.08em] uppercase text-stone-500 mb-2" style={{ fontFamily: '"DM Mono", monospace' }}>Grinder</div>
-            <GrinderPicker value={grinderId} onChange={(id) => { setGrinderId(id); posthog.capture('dialer_option_selected', { type: 'grinder', value: id, label: `${GRINDERS[id].name} ${GRINDERS[id].model}`.trim() }); }} />
+            <GrinderPicker value={grinderId} nullable={true} onChange={(id) => {
+              setGrinderId(id);
+              if (id) localStorage.setItem('grindercal_last_grinder', id);
+              else localStorage.removeItem('grindercal_last_grinder');
+              posthog.capture('dialer_option_selected', { type: 'grinder', value: id, label: id ? `${GRINDERS[id].name} ${GRINDERS[id].model}`.trim() : 'none' });
+            }} />
           </div>
 
           {/* Result */}
           {showResult && (
             <div className="pt-2">
               <div className="text-[9px] tracking-[0.08em] uppercase text-stone-500 mb-3" style={{ fontFamily: '"DM Mono", monospace' }}>
-                Starting point · {grinder.name} {grinder.model} · {guide.label}
+                Starting point{grinder ? ` · ${grinder.name} ${grinder.model}` : ''} · {guide.label}
               </div>
               <div className="flex gap-3">
                 {density === 'both' ? (
                   <>
-                    <ResultCard rec={guide.low}  densityLabel="Low" />
-                    <ResultCard rec={guide.high} densityLabel="High" />
+                    <ResultCard rec={guide.low}  densityLabel="Low"  grinder={grinder} selectedRecipe={selectedRecipe} />
+                    <ResultCard rec={guide.high} densityLabel="High" grinder={grinder} selectedRecipe={selectedRecipe} />
                   </>
                 ) : (
-                  <ResultCard rec={guide[density]} densityLabel={density === 'high' ? 'High' : 'Low'} />
+                  <ResultCard rec={guide[density]} densityLabel={density === 'high' ? 'High' : 'Low'} grinder={grinder} selectedRecipe={selectedRecipe} />
                 )}
               </div>
+              {selectedRecipe && (
+                <div className="mt-3 px-3 py-3 rounded-md" style={{ background: 'linear-gradient(180deg, #121212 0%, #0e0e0e 100%)', border: '1px solid #1e1e1e' }}>
+                  <div className="text-[9px] tracking-[0.08em] uppercase mb-2" style={{ color: '#6a8a7a', fontFamily: '"DM Mono", monospace' }}>
+                    {brew.label} · {selectedRecipe.name}
+                  </div>
+                  <ol className="space-y-1.5">
+                    {selectedRecipe.steps.map((step, i) => (
+                      <li key={i} className="flex gap-2 text-[10px] leading-relaxed" style={{ color: '#a8a098', fontFamily: '"DM Mono", monospace' }}>
+                        <span className="flex-shrink-0 tabular-nums" style={{ color: '#6a8a7a' }}>{i + 1}.</span>
+                        <span>{step}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              )}
               <div className="mt-3 text-[8px] tracking-[0.04em] text-stone-600 leading-relaxed" style={{ fontFamily: '"DM Mono", monospace' }}>
                 Starting point — adjust ±1–2 clicks to taste.{' '}
                 Grounded in{' '}
@@ -1168,7 +1303,7 @@
       const [tab, setTab] = useState(() => window.location.hash === '#dialer' ? 'guide' : 'calibrate');
       const [history, setHistory] = useState([]);
       const [methodId, setMethodId] = useState('v60');
-      const [leftId, setLeftId] = useState('commandante');
+      const [leftId, setLeftId] = useState(() => localStorage.getItem('grindercal_last_grinder') || 'commandante');
       const [rightId, setRightId] = useState('timemore_s3');
       const [leftClick, setLeftClick] = useState(20);
       const [rightClick, setRightClick] = useState(35);
@@ -1218,6 +1353,7 @@
         posthog.capture('grinder_selected', { side: 'source', grinder_id: newId, grinder_name: newGrinder.name, grinder_model: newGrinder.model });
         syncingRef.current = true;
         setLeftId(newId);
+        localStorage.setItem('grindercal_last_grinder', newId);
         const remapped = mapClicks(oldGrinder, newGrinder, leftClick, methodId);
         setLeftClick(remapped);
         if (lockedSide !== 'right') {
