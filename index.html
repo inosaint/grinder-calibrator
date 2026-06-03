@@ -1260,20 +1260,15 @@
       const [roast, setRoast]     = useState(null);
       const [altitude, setAlt]    = useState(null);
       const [brewMethod, setBrewMethod] = useState(null);
-      const [recipe, setRecipe] = useState(null);
+      const [activeRecipe, setActiveRecipe] = useState(null);
       const [grinderId, setGrinderId] = useState(() => localStorage.getItem('grindercal_last_grinder') || 'timemore_s3');
       const grinder = grinderId ? GRINDERS[grinderId] : null;
 
       const density = (roast !== null && altitude !== null) ? deriveDensity(roast, altitude) : null;
       const guide   = process ? PROCESSING_GUIDE.find(p => p.id === process) : null;
       const brew = brewMethod ? BREW_GUIDE.find(b => b.id === brewMethod) : null;
-      const selectedRecipe = brew && recipe !== null ? brew.recipes[recipe] : null;
 
       const [workflowActive, setWorkflowActive] = useState(false);
-
-      useEffect(() => {
-        if (!selectedRecipe) setWorkflowActive(false);
-      }, [selectedRecipe]);
 
       useEffect(() => {
         if (!process || !roast || !altitude) return;
@@ -1302,11 +1297,10 @@
             combo: `${process}·${roast}·${altitude}`,
             suggestion,
             brew_method: brewMethod,
-            recipe_name: selectedRecipe ? selectedRecipe.name : null,
           });
         }, 800);
         return () => clearTimeout(t);
-      }, [process, roast, altitude, grinderId, brewMethod, recipe]);
+      }, [process, roast, altitude, grinderId, brewMethod]);
 
       const pillBase = {
         fontFamily: '"DM Mono", monospace',
@@ -1339,7 +1333,7 @@
         );
       }
 
-      function ResultCard({ rec, densityLabel, grinder: cardGrinder, selectedRecipe: cardRecipe }) {
+      function ResultCard({ rec, densityLabel, grinder: cardGrinder }) {
         const um = dialerMicrons(rec, brewMethod);
         const lo = micronsToClickGuide(cardGrinder || grinder, um[0]);
         const hi = micronsToClickGuide(cardGrinder || grinder, um[1]);
@@ -1361,12 +1355,6 @@
                 <span className="text-[18px] font-bold tabular-nums leading-none" style={{ color: '#9bb086', fontFamily: '"DM Mono", monospace', letterSpacing: '-0.02em' }}>
                   {formatClickString(g, lo)} – {formatClickString(g, hi)}
                 </span>
-              </div>
-            )}
-            {cardRecipe && (
-              <div className="flex items-baseline gap-1.5 mb-1">
-                <span className="text-[11px] tracking-[0.06em] uppercase text-stone-400" style={{ fontFamily: '"DM Mono", monospace', minWidth: 52 }}>Ratio</span>
-                <span className="text-[13px] tabular-nums" style={{ color: '#c8c0b0', fontFamily: '"DM Mono", monospace' }}>{cardRecipe.ratio}</span>
               </div>
             )}
             <div className="flex items-baseline gap-1.5 mb-1">
@@ -1391,13 +1379,13 @@
 
       const showResult = guide && density;
 
-      if (workflowActive && selectedRecipe) {
+      if (workflowActive && activeRecipe) {
         return (
           <RecipeWorkflow
             brew={brew}
-            selectedRecipe={selectedRecipe}
+            selectedRecipe={activeRecipe}
             grinder={grinder}
-            onClose={() => setWorkflowActive(false)}
+            onClose={() => { setWorkflowActive(false); setActiveRecipe(null); }}
           />
         );
       }
@@ -1444,25 +1432,12 @@
                 {BREW_GUIDE.map(b => (
                   <Pill key={b.id} label={b.label} active={brewMethod === b.id} onClick={() => {
                     setBrewMethod(brewMethod === b.id ? null : b.id);
-                    setRecipe(null);
                     posthog.capture('dialer_option_selected', { type: 'brew_method', value: b.id, label: b.label });
                   }} />
                 ))}
               </div>
             </div>
           </div>
-
-          {/* Recipe picker — only shown if brew has multiple recipes */}
-          {brew && brew.recipes.length > 1 && (
-            <div>
-              <div className="text-[9px] tracking-[0.08em] uppercase text-stone-500 mb-2" style={{ fontFamily: '"DM Mono", monospace' }}>Recipe</div>
-              <div className="flex gap-1.5">
-                {brew.recipes.map((r, i) => (
-                  <Pill key={i} label={r.name} active={recipe === i} onClick={() => setRecipe(recipe === i ? null : i)} />
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* Grinder */}
           <div>
@@ -1484,31 +1459,41 @@
               <div className="flex gap-3">
                 {density === 'both' ? (
                   <>
-                    <ResultCard rec={guide.low}  densityLabel="Low"  grinder={grinder} selectedRecipe={selectedRecipe} />
-                    <ResultCard rec={guide.high} densityLabel="High" grinder={grinder} selectedRecipe={selectedRecipe} />
+                    <ResultCard rec={guide.low}  densityLabel="Low"  grinder={grinder} />
+                    <ResultCard rec={guide.high} densityLabel="High" grinder={grinder} />
                   </>
                 ) : (
-                  <ResultCard rec={guide[density]} densityLabel={density === 'high' ? 'High' : 'Low'} grinder={grinder} selectedRecipe={selectedRecipe} />
+                  <ResultCard rec={guide[density]} densityLabel={density === 'high' ? 'High' : 'Low'} grinder={grinder} />
                 )}
               </div>
-              {selectedRecipe && (
-                <button
-                  onClick={() => setWorkflowActive(true)}
-                  className="mt-3 w-full px-4 py-3 rounded-md flex items-center justify-between transition-all"
-                  style={{
-                    background: 'linear-gradient(180deg, #1f2a1f 0%, #141c14 100%)',
-                    border: '1px solid #2a4020',
-                    fontFamily: '"DM Mono", monospace',
-                  }}
-                >
-                  <span className="text-[11px] tracking-[0.06em] uppercase" style={{ color: '#9bb086' }}>
-                    {selectedRecipe.name} · {selectedRecipe.ratio}
-                  </span>
-                  <span className="flex items-center gap-1.5" style={{ color: '#6a8a7a' }}>
-                    <span className="text-[9px] tracking-[0.08em] uppercase">Start</span>
-                    <PlayIcon size={10} />
-                  </span>
-                </button>
+              {brew && showResult && (
+                <div className="mt-1 space-y-2">
+                  {brew.recipes.map((r, i) => (
+                    <button
+                      key={i}
+                      onClick={() => { setActiveRecipe(r); setWorkflowActive(true); }}
+                      className="w-full px-4 py-3 rounded-md flex items-center justify-between transition-all"
+                      style={{
+                        background: 'linear-gradient(180deg, #1f2a1f 0%, #141c14 100%)',
+                        border: '1px solid #2a4020',
+                        fontFamily: '"DM Mono", monospace',
+                      }}
+                    >
+                      <div className="text-left">
+                        <div className="text-[11px] tracking-[0.06em] uppercase" style={{ color: '#9bb086' }}>
+                          {r.name}
+                        </div>
+                        <div className="text-[9px] tracking-[0.04em] mt-0.5" style={{ color: '#6a8a7a' }}>
+                          {r.ratio}
+                        </div>
+                      </div>
+                      <span className="flex items-center gap-1.5" style={{ color: '#6a8a7a' }}>
+                        <span className="text-[9px] tracking-[0.08em] uppercase">Start</span>
+                        <PlayIcon size={10} />
+                      </span>
+                    </button>
+                  ))}
+                </div>
               )}
               <div className="mt-3 text-[8px] tracking-[0.04em] text-stone-600 leading-relaxed" style={{ fontFamily: '"DM Mono", monospace' }}>
                 Starting point — adjust ±1–2 clicks to taste.{' '}
@@ -1553,11 +1538,60 @@
       );
     }
 
+    // ========== DISCLAIMER MODAL ==========
+    function DisclaimerModal({ onClose }) {
+      return (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center px-4"
+          style={{ background: 'rgba(0,0,0,0.7)' }}
+          onClick={onClose}
+        >
+          <div
+            className="w-full max-w-sm rounded-lg px-5 py-5"
+            style={{
+              background: 'linear-gradient(180deg, #1a1714 0%, #110f0d 100%)',
+              border: '1px solid #2a2520',
+              boxShadow: '0 16px 48px rgba(0,0,0,0.8)',
+              fontFamily: '"DM Mono", monospace',
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="text-[9px] tracking-[0.1em] uppercase mb-3" style={{ color: '#6a8a7a' }}>About the mapping</div>
+            <p className="text-[11px] leading-relaxed mb-3" style={{ color: '#a8a098', letterSpacing: '0.03em' }}>
+              Ranges are adapted from{' '}
+              <a href="https://honestcoffeeguide.com/" target="_blank" rel="noopener noreferrer"
+                onClick={() => posthog.capture('link_clicked', { label: 'Honest Coffee Guide', href: 'https://honestcoffeeguide.com/' })}
+                style={{ color: '#9bb086', textDecoration: 'underline', textUnderlineOffset: '2px' }}>
+                Honest Coffee Guide
+              </a>{' '}
+              community brew charts, not manufacturer µm/click specs.
+            </p>
+            <p className="text-[11px] leading-relaxed mb-4" style={{ color: '#a8a098', letterSpacing: '0.03em' }}>
+              Different grinder designs measure different things — the mapping gives you a calibrated starting point, not a physical equivalent. Microns per click is vertical burr travel, not particle-size delta.
+            </p>
+            <button
+              onClick={onClose}
+              className="w-full py-2 rounded-md text-[10px] tracking-[0.06em] uppercase transition-colors"
+              style={{
+                background: '#2a2520',
+                border: '1px solid #3a3530',
+                color: '#6a6a64',
+                fontFamily: '"DM Mono", monospace',
+              }}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      );
+    }
+
     // ========== MAIN APP ==========
     function App() {
       const audioRef = useRef(new ClickAudio());
       const [soundOn, setSoundOn] = useState(true);
       const [historyOpen, setHistoryOpen] = useState(false);
+      const [disclaimerOpen, setDisclaimerOpen] = useState(false);
       const [tab, setTab] = useState(() => window.location.hash === '#dialer' ? 'guide' : 'calibrate');
       const [history, setHistory] = useState([]);
       const [methodId, setMethodId] = useState('v60');
@@ -1971,14 +2005,34 @@
 
             </>}
 
-            <div className="mt-16 mb-1 text-center text-[10px] leading-relaxed text-stone-600"
-              style={{ fontFamily: '"DM Mono", monospace', letterSpacing: '0.05em' }}>
-              Ranges are adapted from <a href="https://honestcoffeeguide.com/" target="_blank" rel="noopener noreferrer" onClick={() => posthog.capture('link_clicked', { label: 'Honest Coffee Guide', href: 'https://honestcoffeeguide.com/' })} style={{ color: 'inherit', textDecoration: 'underline', textUnderlineOffset: '2px' }}>Honest Coffee Guide</a> community brew charts, not manufacturer µm/click specs. Different grinder designs measure different things — the mapping gives you a calibrated starting point, not a physical equivalent.
+            <div
+              className="mt-16 mb-2 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-0 text-[10px] text-stone-700"
+              style={{ fontFamily: '"DM Mono", monospace', letterSpacing: '0.05em' }}
+            >
+              <span>
+                made by{' '}
+                <a href="https://www.instagram.com/filtercoffeeconnoisseur" target="_blank" rel="noopener noreferrer"
+                  onClick={() => posthog.capture('link_clicked', { label: '@filtercoffeeconnoisseur', href: 'https://www.instagram.com/filtercoffeeconnoisseur' })}
+                  style={{ color: 'inherit', textDecoration: 'underline', textUnderlineOffset: '2px' }}>
+                  @filtercoffeeconnoisseur
+                </a>
+                {' '}with Claude
+              </span>
+              <span className="hidden sm:inline mx-2" style={{ color: '#3a3530' }}>·</span>
+              <a href="https://github.com/inosaint/grinder-calibrator/issues" target="_blank" rel="noopener noreferrer"
+                onClick={() => posthog.capture('link_clicked', { label: 'report a bug', href: 'https://github.com/inosaint/grinder-calibrator/issues' })}
+                style={{ color: 'inherit', textDecoration: 'underline', textUnderlineOffset: '2px' }}>
+                report a bug
+              </a>
+              <span className="hidden sm:inline mx-2" style={{ color: '#3a3530' }}>·</span>
+              <button
+                onClick={() => setDisclaimerOpen(true)}
+                style={{ color: 'inherit', textDecoration: 'underline', textUnderlineOffset: '2px', background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: '"DM Mono", monospace', fontSize: 'inherit', letterSpacing: 'inherit' }}
+              >
+                disclaimer
+              </button>
             </div>
-            <div className="mb-2 text-center text-[10px] text-stone-700"
-              style={{ fontFamily: '"DM Mono", monospace', letterSpacing: '0.05em' }}>
-              made by <a href="https://www.instagram.com/filtercoffeeconnoisseur" target="_blank" rel="noopener noreferrer" onClick={() => posthog.capture('link_clicked', { label: '@filtercoffeeconnoisseur', href: 'https://www.instagram.com/filtercoffeeconnoisseur' })} style={{ color: 'inherit', textDecoration: 'underline', textUnderlineOffset: '2px' }}>@filtercoffeeconnoisseur</a> with Claude · <a href="https://github.com/inosaint/grinder-calibrator/issues" target="_blank" rel="noopener noreferrer" onClick={() => posthog.capture('link_clicked', { label: 'report a bug', href: 'https://github.com/inosaint/grinder-calibrator/issues' })} style={{ color: 'inherit', textDecoration: 'underline', textUnderlineOffset: '2px' }}>report a bug</a>
-            </div>
+            {disclaimerOpen && <DisclaimerModal onClose={() => setDisclaimerOpen(false)} />}
           </main>
         </div>
       );
