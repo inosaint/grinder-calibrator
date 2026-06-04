@@ -613,7 +613,7 @@
       const dialRef = useRef(null);
       const dragRef = useRef({ active: false, startAngle: 0, startClick: 0 });
       const lastSoundClickRef = useRef(click);
-      const range = getMethodClickRange(grinder);
+      const range = getMethodClickRange(grinder, methodId);
       const totalClicks = grinder.maxClick - grinder.minClick;
 
       const clickToAngleDeg = (c) => {
