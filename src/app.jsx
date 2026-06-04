@@ -1399,7 +1399,7 @@
           {/* Result */}
           {showResult && (
             <div className="pt-2">
-              <div className="text-[9px] tracking-[0.08em] uppercase text-stone-500 mb-2" style={{ fontFamily: '"DM Mono", monospace' }}>Recommendations</div>
+              <div className="text-[9px] tracking-[0.08em] uppercase text-stone-500 mb-2" style={{ fontFamily: '"DM Mono", monospace' }}>Recommendations <span className="normal-case" style={{ textTransform: 'none', letterSpacing: '0.02em' }}>(adjust ±1–2 clicks to taste)</span></div>
               <div className="flex gap-3">
                 {density === 'both' ? (
                   <>
@@ -1437,7 +1437,6 @@
                 </div>
               )}
               <div className="mt-3 text-[8px] tracking-[0.04em] text-stone-600 leading-relaxed" style={{ fontFamily: '"DM Mono", monospace' }}>
-                Starting point — adjust ±1–2 clicks to taste.{' '}
                 Grounded in{' '}
                 <a href="https://coffeegeek.com/wp-content/uploads/2023/10/SCAGoldCupStandard.pdf" target="_blank" rel="noopener" style={{ color: '#6a8a7a', textDecoration: 'underline' }}>SCA Golden Cup Standard</a>
                 {' '}·{' '}
