@@ -95,6 +95,22 @@
         </svg>
       );
     }
+    function ShareIcon({ size = 24 }) {
+      return (
+        <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+          <polyline points="16 6 12 2 8 6"/>
+          <line x1="12" y1="2" x2="12" y2="15"/>
+        </svg>
+      );
+    }
+    function CheckIcon({ size = 24 }) {
+      return (
+        <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+      );
+    }
 
     // ========== BREW METHOD RANGES (single source of truth, in microns) ==========
     // Derived from Honest Coffee Guide's Comandante C40 ranges × 30 µm/click.
@@ -1043,158 +1059,217 @@
       );
     }
 
-    function RecipeWorkflow({ brew, selectedRecipe, grinder, onClose }) {
-      const [step, setStep] = useState(0);
-      const [elapsed, setElapsed] = useState(0);
-      const [running, setRunning] = useState(false);
+    function parseDialerHash() {
+      const m = window.location.hash.match(/^#d\/([^/]+)\/([^/]+)\/([^/]+)\/([^/]+)\/([^/]+)(?:\/([^/]+))?$/);
+      if (!m) return null;
+      return {
+        process: m[1], roast: m[2], altitude: m[3],
+        brewMethod: m[4],
+        grinderId: m[5] === 'none' ? null : m[5],
+        recipeName: m[6] || null,
+      };
+    }
+
+    function RecipeWorkflow({ brew, selectedRecipe, grinder, grindInfo, onClose }) {
+      const totalSteps = selectedRecipe.steps.length;
+      const [stepElapsed, setStepElapsed] = useState(() => new Array(totalSteps).fill(0));
+      const [activeStep, setActiveStep] = useState(null);
+      const [doneSteps, setDoneSteps] = useState(new Set());
+      const [copied, setCopied] = useState(false);
       const intervalRef = useRef(null);
 
-      const totalSteps = selectedRecipe.steps.length;
+      const monoStyle = { fontFamily: '"DM Mono", monospace' };
 
       useEffect(() => {
-        if (running) {
-          intervalRef.current = setInterval(() => setElapsed(e => e + 1), 1000);
+        if (activeStep !== null) {
+          intervalRef.current = setInterval(() => {
+            setStepElapsed(e => e.map((v, i) => i === activeStep ? v + 1 : v));
+          }, 1000);
         } else {
           clearInterval(intervalRef.current);
         }
         return () => clearInterval(intervalRef.current);
-      }, [running]);
+      }, [activeStep]);
 
-      function resetTimer() {
-        setRunning(false);
-        setElapsed(0);
+      function toggleStep(i) {
+        setActiveStep(prev => prev === i ? null : i);
       }
 
-      function goStep(n) {
-        setStep(n);
-        resetTimer();
+      function resetStep(i) {
+        if (activeStep === i) setActiveStep(null);
+        setStepElapsed(e => e.map((v, j) => j === i ? 0 : v));
       }
 
-      const mm = String(Math.floor(elapsed / 60)).padStart(2, '0');
-      const ss = String(elapsed % 60).padStart(2, '0');
+      function toggleDone(i) {
+        if (activeStep === i) setActiveStep(null);
+        setDoneSteps(prev => {
+          const next = new Set(prev);
+          if (next.has(i)) next.delete(i); else next.add(i);
+          return next;
+        });
+      }
 
-      const monoStyle = { fontFamily: '"DM Mono", monospace' };
+      function handleShare() {
+        navigator.clipboard?.writeText(window.location.href).then(() => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        }).catch(() => {});
+      }
+
+      function fmt(secs) {
+        return `${String(Math.floor(secs / 60)).padStart(2, '0')}:${String(secs % 60).padStart(2, '0')}`;
+      }
 
       return (
-        <div className="flex flex-col h-full" style={{ minHeight: 420 }}>
+        <div className="space-y-4">
           {/* Header */}
-          <div className="flex items-center gap-3 mb-6">
+          <div className="flex items-center gap-3">
             <button
               onClick={onClose}
-              className="flex items-center justify-center w-8 h-8 rounded-md transition-colors"
+              className="flex items-center justify-center w-8 h-8 rounded-md transition-colors flex-shrink-0"
               style={{ background: '#1a1714', border: '1px solid #2a2520', color: '#a8a098' }}
             >
               <ArrowLeftIcon size={14} />
             </button>
-            <div>
+            <div className="flex-1 min-w-0">
               <div className="text-[9px] tracking-[0.08em] uppercase" style={{ color: '#6a8a7a', ...monoStyle }}>{brew.label}</div>
-              <div className="text-[11px] tracking-[0.06em] uppercase" style={{ color: '#c8c0b0', ...monoStyle }}>{selectedRecipe.name}</div>
+              <div className="text-[11px] tracking-[0.06em] uppercase truncate" style={{ color: '#c8c0b0', ...monoStyle }}>
+                {selectedRecipe.name}
+                <span style={{ color: '#3a3a34', margin: '0 0.4em' }}>·</span>
+                {selectedRecipe.ratio}
+              </div>
             </div>
-            <div className="ml-auto text-[9px] tracking-[0.06em] uppercase" style={{ color: '#4a4a44', ...monoStyle }}>
-              {step + 1} / {totalSteps}
-            </div>
-          </div>
-
-          {/* Step progress dots */}
-          <div className="flex gap-1.5 mb-6">
-            {selectedRecipe.steps.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => goStep(i)}
-                className="h-1 rounded-full transition-all"
-                style={{
-                  flex: i === step ? '2 1 0' : '1 1 0',
-                  background: i < step ? '#6a8a7a' : i === step ? '#9bb086' : '#2a2520',
-                }}
-              />
-            ))}
-          </div>
-
-          {/* Step text */}
-          <div
-            className="flex-1 px-4 py-4 rounded-md mb-6"
-            style={{ background: 'linear-gradient(180deg, #141c14 0%, #0a100a 100%)', border: '1px solid #1a3020' }}
-          >
-            <div className="text-[9px] tracking-[0.08em] uppercase mb-3" style={{ color: '#6a9a7a', ...monoStyle }}>
-              Step {step + 1}
-            </div>
-            <div className="text-[13px] leading-relaxed" style={{ color: '#c8c0b0', ...monoStyle }}>
-              {selectedRecipe.steps[step]}
-            </div>
-          </div>
-
-          {/* Timer */}
-          <div className="flex flex-col items-center gap-4 mb-6">
-            <div
-              className="text-[40px] tabular-nums leading-none tracking-[-0.02em]"
-              style={{ color: running ? '#9bb086' : '#4a4a44', ...monoStyle }}
+            <button
+              onClick={handleShare}
+              className="flex items-center justify-center w-8 h-8 rounded-md transition-all flex-shrink-0"
+              style={{
+                background: copied ? 'linear-gradient(180deg, #1a2a1a 0%, #101810 100%)' : '#1a1714',
+                border: copied ? '1px solid #2a5030' : '1px solid #2a2520',
+                color: copied ? '#9bb086' : '#6a6a64',
+              }}
+              title="Copy link"
             >
-              {mm}:{ss}
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={resetTimer}
-                className="flex items-center justify-center w-10 h-10 rounded-full transition-all"
-                style={{ background: '#1a1714', border: '1px solid #2a2520', color: '#6a6a64' }}
-              >
-                <RotateCcwIcon size={14} />
-              </button>
-              <button
-                onClick={() => setRunning(r => !r)}
-                className="flex items-center justify-center w-14 h-14 rounded-full transition-all"
-                style={{
-                  background: running
-                    ? 'linear-gradient(180deg, #3a5030 0%, #243220 100%)'
-                    : 'linear-gradient(180deg, #9bb086 0%, #6a8a5a 100%)',
-                  border: running ? '1px solid #2a4020' : '1px solid #5a7a4a',
-                  color: running ? '#9bb086' : '#0a0a08',
-                  boxShadow: running ? 'none' : '0 2px 8px rgba(0,0,0,0.4)',
-                }}
-              >
-                {running ? <PauseIcon size={18} /> : <PlayIcon size={18} />}
-              </button>
-              <div className="w-10 h-10" />
-            </div>
+              {copied ? <CheckIcon size={14} /> : <ShareIcon size={14} />}
+            </button>
           </div>
 
-          {/* Prev / Next */}
-          <div className="flex gap-3">
-            {step > 0 && (
-              <button
-                onClick={() => goStep(step - 1)}
-                className="flex-1 py-2.5 rounded-md text-[10px] tracking-[0.06em] uppercase transition-all"
-                style={{ background: '#1a1714', border: '1px solid #2a2520', color: '#6a6a64', ...monoStyle }}
-              >
-                Previous
-              </button>
-            )}
-            {step < totalSteps - 1 ? (
-              <button
-                onClick={() => goStep(step + 1)}
-                className="flex-1 py-2.5 rounded-md text-[10px] tracking-[0.06em] uppercase flex items-center justify-center gap-2 transition-all"
-                style={{
-                  background: 'linear-gradient(180deg, #1f2a1f 0%, #141c14 100%)',
-                  border: '1px solid #2a4020',
-                  color: '#9bb086',
-                  ...monoStyle,
-                }}
-              >
-                Next step <ChevronRightIcon size={12} />
-              </button>
-            ) : (
-              <button
-                onClick={onClose}
-                className="flex-1 py-2.5 rounded-md text-[10px] tracking-[0.06em] uppercase transition-all"
-                style={{
-                  background: 'linear-gradient(180deg, #2a3020 0%, #1a2014 100%)',
-                  border: '1px solid #3a5030',
-                  color: '#9bb086',
-                  ...monoStyle,
-                }}
-              >
-                Done
-              </button>
-            )}
+          {/* Grind context */}
+          {grindInfo && (
+            <div
+              className="px-3 py-2.5 rounded-md flex items-center gap-4"
+              style={{ background: 'linear-gradient(180deg, #141c14 0%, #0a100a 100%)', border: '1px solid #1a3020' }}
+            >
+              {grinder ? (
+                <div className="flex-1 min-w-0">
+                  <div className="text-[8px] tracking-[0.08em] uppercase mb-0.5" style={{ color: '#3a6040', ...monoStyle }}>Grinder</div>
+                  <div className="text-[10px] tracking-[0.04em] truncate" style={{ color: '#9bb086', ...monoStyle }}>
+                    {grinder.name} {grinder.model}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex-1">
+                  <div className="text-[8px] tracking-[0.08em] uppercase mb-0.5" style={{ color: '#3a6040', ...monoStyle }}>Grind</div>
+                  <div className="text-[10px] tracking-[0.04em]" style={{ color: '#9bb086', ...monoStyle }}>
+                    {grindInfo.um[0]}–{grindInfo.um[1]} µm
+                  </div>
+                </div>
+              )}
+              {grinder && grindInfo.clickRange && (
+                <div>
+                  <div className="text-[8px] tracking-[0.08em] uppercase mb-0.5" style={{ color: '#3a6040', ...monoStyle }}>Setting</div>
+                  <div className="text-[10px] tracking-[0.04em]" style={{ color: '#9bb086', ...monoStyle }}>
+                    {formatClickString(grinder, grindInfo.clickRange[0])} – {formatClickString(grinder, grindInfo.clickRange[1])}
+                  </div>
+                </div>
+              )}
+              <div>
+                <div className="text-[8px] tracking-[0.08em] uppercase mb-0.5" style={{ color: '#3a6040', ...monoStyle }}>Temp</div>
+                <div className="text-[10px] tracking-[0.04em]" style={{ color: '#9bb086', ...monoStyle }}>
+                  {grindInfo.temp[0]}–{grindInfo.temp[1]}°C
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Steps */}
+          <div className="space-y-2">
+            {selectedRecipe.steps.map((text, i) => {
+              const running = activeStep === i;
+              const done = doneSteps.has(i);
+              return (
+                <div
+                  key={i}
+                  className="px-3 py-3 rounded-md"
+                  style={{
+                    background: done
+                      ? 'linear-gradient(180deg, #0f0f0e 0%, #0a0a08 100%)'
+                      : running
+                        ? 'linear-gradient(180deg, #141c14 0%, #0a100a 100%)'
+                        : 'linear-gradient(180deg, #141210 0%, #0c0a08 100%)',
+                    border: done ? '1px solid #1a1a18' : running ? '1px solid #2a4020' : '1px solid #1e1a16',
+                    transition: 'background 0.2s, border-color 0.2s',
+                  }}
+                >
+                  <div className="flex items-start gap-3">
+                    <button
+                      onClick={() => toggleDone(i)}
+                      className="flex-shrink-0 w-5 h-5 rounded flex items-center justify-center mt-0.5 transition-all"
+                      style={{
+                        background: done ? '#1a3020' : '#1a1714',
+                        border: done ? '1px solid #2a5030' : '1px solid #2a2520',
+                        color: done ? '#6a9a7a' : '#4a4a44',
+                      }}
+                    >
+                      {done
+                        ? <CheckIcon size={10} />
+                        : <span style={{ fontSize: 9, fontFamily: '"DM Mono", monospace', letterSpacing: '0.04em' }}>{i + 1}</span>
+                      }
+                    </button>
+                    <div
+                      className="flex-1 text-[12px] leading-relaxed"
+                      style={{
+                        color: done ? '#3a3a34' : '#c8c0b0',
+                        textDecoration: done ? 'line-through' : 'none',
+                        textDecorationColor: '#2a2a24',
+                        ...monoStyle,
+                      }}
+                    >
+                      {text}
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-shrink-0 pt-0.5">
+                      <span
+                        className="text-[11px] tabular-nums w-10 text-right"
+                        style={{ color: running ? '#9bb086' : '#3a3a34', ...monoStyle }}
+                      >
+                        {fmt(stepElapsed[i])}
+                      </span>
+                      <button
+                        onClick={() => toggleStep(i)}
+                        className="w-6 h-6 rounded flex items-center justify-center transition-all"
+                        style={{
+                          background: running
+                            ? 'linear-gradient(180deg, #3a5030 0%, #243220 100%)'
+                            : 'linear-gradient(180deg, #2a2520 0%, #1a1510 100%)',
+                          border: running ? '1px solid #2a4020' : '1px solid #0a0908',
+                          color: running ? '#9bb086' : '#6a6a64',
+                        }}
+                      >
+                        {running ? <PauseIcon size={9} /> : <PlayIcon size={9} />}
+                      </button>
+                      {stepElapsed[i] > 0 && (
+                        <button
+                          onClick={() => resetStep(i)}
+                          className="w-6 h-6 rounded flex items-center justify-center"
+                          style={{ background: '#1a1714', border: '1px solid #0a0908', color: '#4a4a44' }}
+                        >
+                          <RotateCcwIcon size={9} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       );
@@ -1202,19 +1277,43 @@
 
     // ========== BEAN GUIDE ==========
     function BeanGuide() {
-      const [process, setProcess] = useState(null);
-      const [roast, setRoast]     = useState(null);
-      const [altitude, setAlt]    = useState(null);
-      const [brewMethod, setBrewMethod] = useState(null);
-      const [activeRecipe, setActiveRecipe] = useState(null);
-      const [grinderId, setGrinderId] = useState(() => localStorage.getItem('grindercal_last_grinder') || 'timemore_s3');
+      const [process, setProcess] = useState(() => parseDialerHash()?.process || null);
+      const [roast, setRoast]     = useState(() => parseDialerHash()?.roast || null);
+      const [altitude, setAlt]    = useState(() => parseDialerHash()?.altitude || null);
+      const [brewMethod, setBrewMethod] = useState(() => parseDialerHash()?.brewMethod || null);
+      const [grinderId, setGrinderId] = useState(() => {
+        const h = parseDialerHash();
+        return (h?.grinderId) || localStorage.getItem('grindercal_last_grinder') || 'timemore_s3';
+      });
       const grinder = grinderId ? GRINDERS[grinderId] : null;
 
       const density = (roast !== null && altitude !== null) ? deriveDensity(roast, altitude) : null;
       const guide   = process ? PROCESSING_GUIDE.find(p => p.id === process) : null;
       const brew = brewMethod ? BREW_GUIDE.find(b => b.id === brewMethod) : null;
 
-      const [workflowActive, setWorkflowActive] = useState(false);
+      const [activeGrindInfo, setActiveGrindInfo] = useState(() => {
+        const h = parseDialerHash();
+        if (!h?.recipeName || !h.process || !h.roast || !h.altitude) return null;
+        const g = PROCESSING_GUIDE.find(p => p.id === h.process);
+        if (!g) return null;
+        const d = deriveDensity(h.roast, h.altitude);
+        const rec = g[d === 'both' ? 'low' : d];
+        const um = dialerMicrons(rec, h.brewMethod);
+        const gid = h.grinderId || localStorage.getItem('grindercal_last_grinder') || 'timemore_s3';
+        const gr = gid ? GRINDERS[gid] : null;
+        return { um, temp: rec.temp, clickRange: gr ? [micronsToClickGuide(gr, um[0]), micronsToClickGuide(gr, um[1])] : null };
+      });
+      const [activeRecipe, setActiveRecipe] = useState(() => {
+        const h = parseDialerHash();
+        if (!h?.recipeName) return null;
+        const b = BREW_GUIDE.find(b => b.id === h.brewMethod);
+        if (!b) return null;
+        return b.recipes.find(r => r.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') === h.recipeName) || null;
+      });
+      const [workflowActive, setWorkflowActive] = useState(() => {
+        const h = parseDialerHash();
+        return !!(h?.recipeName);
+      });
 
       useEffect(() => {
         if (!process || !roast || !altitude) return;
@@ -1325,13 +1424,34 @@
 
       const showResult = guide && density;
 
+      function openRecipe(r) {
+        const d = density === 'both' ? 'low' : density;
+        const rec = guide[d];
+        const um = dialerMicrons(rec, brewMethod);
+        const info = { um, temp: rec.temp, clickRange: grinder ? [micronsToClickGuide(grinder, um[0]), micronsToClickGuide(grinder, um[1])] : null };
+        setActiveGrindInfo(info);
+        setActiveRecipe(r);
+        setWorkflowActive(true);
+        const slug = r.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+        window.history.replaceState(null, '', `#d/${process}/${roast}/${altitude}/${brewMethod}/${grinderId || 'none'}/${slug}`);
+        posthog.capture('dialer_option_selected', { type: 'recipe', value: slug, label: r.name });
+      }
+
+      function closeRecipe() {
+        setWorkflowActive(false);
+        setActiveRecipe(null);
+        setActiveGrindInfo(null);
+        window.history.replaceState(null, '', '#dialer');
+      }
+
       if (workflowActive && activeRecipe) {
         return (
           <RecipeWorkflow
-            brew={brew}
+            brew={brew || BREW_GUIDE.find(b => b.recipes.includes(activeRecipe))}
             selectedRecipe={activeRecipe}
             grinder={grinder}
-            onClose={() => { setWorkflowActive(false); setActiveRecipe(null); }}
+            grindInfo={activeGrindInfo}
+            onClose={closeRecipe}
           />
         );
       }
@@ -1415,7 +1535,7 @@
                   {brew.recipes.map((r, i) => (
                     <button
                       key={i}
-                      onClick={() => { setActiveRecipe(r); setWorkflowActive(true); }}
+                      onClick={() => openRecipe(r)}
                       className="w-full px-4 py-2 rounded-md flex items-center justify-between transition-all"
                       style={{
                         background: 'linear-gradient(180deg, #141c14 0%, #0a100a 100%)',
@@ -1436,12 +1556,6 @@
                   ))}
                 </div>
               )}
-              <div className="mt-3 text-[8px] tracking-[0.04em] text-stone-600 leading-relaxed" style={{ fontFamily: '"DM Mono", monospace' }}>
-                Grounded in{' '}
-                <a href="https://coffeegeek.com/wp-content/uploads/2023/10/SCAGoldCupStandard.pdf" target="_blank" rel="noopener" style={{ color: '#6a8a7a', textDecoration: 'underline' }}>SCA Golden Cup Standard</a>
-                {' '}·{' '}
-                <a href="https://coffeeadastra.com/" target="_blank" rel="noopener" style={{ color: '#6a8a7a', textDecoration: 'underline' }}>Jonathan Gagné / Coffee Ad Astra</a>
-              </div>
             </div>
           )}
         </div>
@@ -1532,7 +1646,10 @@
       const [soundOn, setSoundOn] = useState(true);
       const [historyOpen, setHistoryOpen] = useState(false);
       const [disclaimerOpen, setDisclaimerOpen] = useState(false);
-      const [tab, setTab] = useState(() => window.location.hash === '#dialer' ? 'guide' : 'calibrate');
+      const [tab, setTab] = useState(() => {
+        const h = window.location.hash;
+        return (h === '#dialer' || h.startsWith('#d/')) ? 'guide' : 'calibrate';
+      });
       const [history, setHistory] = useState([]);
       const [methodId, setMethodId] = useState('v60');
       const [leftId, setLeftId] = useState(() => localStorage.getItem('grindercal_last_grinder') || 'commandante');
@@ -1552,13 +1669,18 @@
       }, [soundOn]);
 
       useEffect(() => {
-        const hash = tab === 'guide' ? '#dialer' : '#calibrator';
-        if (window.location.hash !== hash) window.history.replaceState(null, '', hash);
+        const h = window.location.hash;
+        if (tab === 'guide') {
+          if (!h.startsWith('#d/') && h !== '#dialer') window.history.replaceState(null, '', '#dialer');
+        } else {
+          if (h !== '#calibrator') window.history.replaceState(null, '', '#calibrator');
+        }
       }, [tab]);
 
       useEffect(() => {
         const onHashChange = () => {
-          setTab(window.location.hash === '#dialer' ? 'guide' : 'calibrate');
+          const h = window.location.hash;
+          setTab((h === '#dialer' || h.startsWith('#d/')) ? 'guide' : 'calibrate');
         };
         window.addEventListener('hashchange', onHashChange);
         return () => window.removeEventListener('hashchange', onHashChange);
