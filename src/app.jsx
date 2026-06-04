@@ -695,14 +695,11 @@
 
       useEffect(() => {
         if (lastSoundClickRef.current !== click) {
-          const inRange = range ? click >= range[0] && click <= range[1] : false;
-          const wasInRange = range ? lastSoundClickRef.current >= range[0] && lastSoundClickRef.current <= range[1] : false;
-          const enteringRange = inRange && !wasInRange;
           const atEdge = click === grinder.minClick || click === grinder.maxClick;
-          audio.click(atEdge ? 'edge' : enteringRange ? 'snap' : 'detent');
+          audio.click(atEdge ? 'edge' : 'detent');
           lastSoundClickRef.current = click;
         }
-      }, [click, range, grinder, audio]);
+      }, [click, grinder, audio]);
 
       const adjustClick = (delta) => {
         audio.init();
@@ -783,6 +780,7 @@
               <circle cx="140" cy="140" r="138" fill={`url(#bezelGrad-${grinder.id})`} />
               <circle cx="140" cy="140" r="138" fill={`url(#bezelHi-${grinder.id})`} />
 
+              {/* range arc hidden — buggy behaviour, tracked in issue #11
               {range && (
                 <path
                   d={describeArc(140, 140, 124, clickToAngleDeg(range[0]), clickToAngleDeg(range[1]))}
@@ -796,7 +794,7 @@
                     transition: 'opacity 0.3s, filter 0.3s',
                   }}
                 />
-              )}
+              )} */}
 
               {numberedTicks.map((t) => {
                 const rad = ((t.angle - 90) * Math.PI) / 180;
