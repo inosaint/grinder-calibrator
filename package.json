@@ -1,0 +1,30 @@
+{
+  "name": "grinder-calibrator",
+  "private": true,
+  "scripts": {
+    "build": "bun run build:js && bun run build:css",
+    "build:js": "babel src/app.jsx -o app.js --minified --compact true",
+    "build:css": "tailwindcss -i src/index.css -o style.css --minify",
+    "watch": "babel src/app.jsx -o app.js --watch"
+  },
+  "babel": {
+    "presets": [
+      ["@babel/preset-env", {
+        "targets": {
+          "esmodules": true
+        },
+        "modules": false
+      }],
+      ["@babel/preset-react", {
+        "runtime": "classic"
+      }]
+    ]
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.24.0",
+    "@babel/preset-env": "^7.24.0",
+    "@babel/preset-react": "^7.24.0",
+    "@tailwindcss/cli": "^4.3.0",
+    "tailwindcss": "^4.3.0"
+  }
+}
