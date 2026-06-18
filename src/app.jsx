@@ -1090,8 +1090,10 @@
       const m = window.location.hash.match(/^#d\/([^/]+)\/([^/]+)\/([^/]+)\/([^/]+)\/([^/]+)(?:\/([^/]+))?$/);
       if (!m) return null;
       return {
-        process: m[1], roast: m[2], altitude: m[3],
-        brewMethod: m[4],
+        process: m[1],
+        roast: m[2] === 'any' ? null : m[2],
+        altitude: m[3] === 'any' ? null : m[3],
+        brewMethod: m[4] === 'none' ? null : m[4],
         grinderId: m[5] === 'none' ? null : m[5],
         recipeName: m[6] || null,
       };
@@ -1318,13 +1320,57 @@
       const guide   = process ? PROCESSING_GUIDE.find(p => p.id === process) : null;
       const brew = brewMethod ? BREW_GUIDE.find(b => b.id === brewMethod) : null;
 
+      function recipeSlug(r) {
+        return r.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      }
+
+      function combineTemps(low, high) {
+        return [
+          Math.min(low.temp[0], high.temp[0]),
+          Math.max(low.temp[1], high.temp[1]),
+        ];
+      }
+
+      function brewerRec(sourceGuide = guide, sourceBrewMethod = brewMethod) {
+        if (!sourceGuide || !sourceBrewMethod || !DIALER_METHOD_RANGES[sourceBrewMethod]) return null;
+        return {
+          um: DIALER_METHOD_RANGES[sourceBrewMethod],
+          temp: combineTemps(sourceGuide.low, sourceGuide.high),
+        };
+      }
+
+      function getRecommendationCards() {
+        if (!guide) return [];
+        if (density === 'both') {
+          return [
+            { rec: guide.low, label: 'Low', suffix: 'density' },
+            { rec: guide.high, label: 'High', suffix: 'density' },
+          ];
+        }
+        if (density) {
+          return [{ rec: guide[density], label: density === 'high' ? 'High' : 'Low', suffix: 'density' }];
+        }
+        const rec = brewerRec();
+        return rec ? [{ rec, label: 'Brewer', suffix: 'range' }] : [];
+      }
+
+      function grindInfoForRec(rec) {
+        const um = dialerMicrons(rec, brewMethod);
+        return {
+          um,
+          temp: rec.temp,
+          clickRange: grinder ? [micronsToClickGuide(grinder, um[0]), micronsToClickGuide(grinder, um[1])] : null,
+        };
+      }
+
       const [activeGrindInfo, setActiveGrindInfo] = useState(() => {
         const h = parseDialerHash();
-        if (!h?.recipeName || !h.process || !h.roast || !h.altitude) return null;
+        if (!h?.recipeName || !h.process) return null;
         const g = PROCESSING_GUIDE.find(p => p.id === h.process);
         if (!g) return null;
-        const d = deriveDensity(h.roast, h.altitude);
-        const rec = g[d === 'both' ? 'low' : d];
+        const d = (h.roast !== null && h.altitude !== null) ? deriveDensity(h.roast, h.altitude) : null;
+        const rec = d ? g[d === 'both' ? 'low' : d] : brewerRec(g, h.brewMethod);
+        if (!rec) return null;
         const um = dialerMicrons(rec, h.brewMethod);
         const gid = h.grinderId || localStorage.getItem('grindercal_last_grinder') || 'timemore_s3';
         const gr = gid ? GRINDERS[gid] : null;
@@ -1335,7 +1381,7 @@
         if (!h?.recipeName) return null;
         const b = BREW_GUIDE.find(b => b.id === h.brewMethod);
         if (!b) return null;
-        return b.recipes.find(r => r.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') === h.recipeName) || null;
+        return b.recipes.find(r => recipeSlug(r) === h.recipeName) || null;
       });
       const [workflowActive, setWorkflowActive] = useState(() => {
         const h = parseDialerHash();
@@ -1343,10 +1389,8 @@
       });
 
       useEffect(() => {
-        if (!process || !roast || !altitude) return;
+        if (!process || (!density && !brewMethod)) return;
         const t = setTimeout(() => {
-          const g = PROCESSING_GUIDE.find(p => p.id === process);
-          const d = deriveDensity(roast, altitude);
           const buildOutput = (rec) => {
             const um = dialerMicrons(rec, brewMethod);
             return {
@@ -1356,23 +1400,24 @@
               temp: rec.temp,
             };
           };
-          const suggestion = d === 'both'
-            ? { low: buildOutput(g.low), high: buildOutput(g.high) }
-            : { [d]: buildOutput(g[d]) };
+          const suggestion = getRecommendationCards().reduce((out, card) => {
+            out[card.suffix === 'range' ? 'brewer' : card.label.toLowerCase()] = buildOutput(card.rec);
+            return out;
+          }, {});
           posthog.capture('dialer_result_shown', {
             process,
             roast,
             altitude,
             grinder_id: grinderId,
             grinder_name: grinder ? `${grinder.name} ${grinder.model}`.trim() : null,
-            density: d,
-            combo: `${process}·${roast}·${altitude}`,
+            density: density || 'brewer',
+            combo: `${process}·${roast || 'any'}·${altitude || 'any'}`,
             suggestion,
             brew_method: brewMethod,
           });
         }, 800);
         return () => clearTimeout(t);
-      }, [process, roast, altitude, grinderId, brewMethod]);
+      }, [process, roast, altitude, grinderId, brewMethod, density]);
 
       const pillBase = {
         fontFamily: '"DM Mono", monospace',
@@ -1405,11 +1450,10 @@
         );
       }
 
-      function ResultCard({ rec, densityLabel, grinder: cardGrinder }) {
+      function ResultCard({ rec, label, suffix, grinder: cardGrinder }) {
         const um = dialerMicrons(rec, brewMethod);
-        const lo = micronsToClickGuide(cardGrinder || grinder, um[0]);
-        const hi = micronsToClickGuide(cardGrinder || grinder, um[1]);
         const g = cardGrinder || grinder;
+        const clickRange = g ? [micronsToClickGuide(g, um[0]), micronsToClickGuide(g, um[1])] : null;
         return (
           <div
             className="flex-1 px-4 py-3 rounded-md"
@@ -1419,13 +1463,13 @@
             }}
           >
             <div className="text-[9px] tracking-[0.08em] uppercase mb-2" style={{ color: '#6a9a7a', fontFamily: '"DM Mono", monospace' }}>
-              {densityLabel} density
+              {label} {suffix}
             </div>
-            {g && (
+            {g && clickRange && (
               <div className="flex items-baseline gap-1.5 mb-1">
                 <span className="text-[11px] tracking-[0.06em] uppercase text-stone-400" style={{ fontFamily: '"DM Mono", monospace', minWidth: 52 }}>Grind</span>
                 <span className="text-[18px] font-bold tabular-nums leading-none" style={{ color: '#9bb086', fontFamily: '"DM Mono", monospace', letterSpacing: '-0.02em' }}>
-                  {formatClickString(g, lo)} – {formatClickString(g, hi)}
+                  {formatClickString(g, clickRange[0])} – {formatClickString(g, clickRange[1])}
                 </span>
               </div>
             )}
@@ -1449,18 +1493,18 @@
         );
       }
 
-      const showResult = guide && density;
+      const recommendationCards = getRecommendationCards();
+      const showResult = recommendationCards.length > 0;
 
       function openRecipe(r) {
-        const d = density === 'both' ? 'low' : density;
-        const rec = guide[d];
-        const um = dialerMicrons(rec, brewMethod);
-        const info = { um, temp: rec.temp, clickRange: grinder ? [micronsToClickGuide(grinder, um[0]), micronsToClickGuide(grinder, um[1])] : null };
+        const rec = recommendationCards[0]?.rec;
+        if (!rec) return;
+        const info = grindInfoForRec(rec);
         setActiveGrindInfo(info);
         setActiveRecipe(r);
         setWorkflowActive(true);
-        const slug = r.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-        window.history.replaceState(null, '', `#d/${process}/${roast}/${altitude}/${brewMethod}/${grinderId || 'none'}/${slug}`);
+        const slug = recipeSlug(r);
+        window.history.replaceState(null, '', `#d/${process}/${roast || 'any'}/${altitude || 'any'}/${brewMethod || 'none'}/${grinderId || 'none'}/${slug}`);
         posthog.capture('dialer_option_selected', { type: 'recipe', value: slug, label: r.name });
       }
 
@@ -1548,14 +1592,9 @@
             <div className="pt-2">
               <div className="text-[9px] tracking-[0.08em] uppercase text-stone-500 mb-2" style={{ fontFamily: '"DM Mono", monospace' }}>Recommendations <span className="normal-case" style={{ textTransform: 'none', letterSpacing: '0.02em' }}>(adjust ±1–2 clicks to taste)</span></div>
               <div className="flex gap-3">
-                {density === 'both' ? (
-                  <>
-                    <ResultCard rec={guide.low}  densityLabel="Low"  grinder={grinder} />
-                    <ResultCard rec={guide.high} densityLabel="High" grinder={grinder} />
-                  </>
-                ) : (
-                  <ResultCard rec={guide[density]} densityLabel={density === 'high' ? 'High' : 'Low'} grinder={grinder} />
-                )}
+                {recommendationCards.map((card) => (
+                  <ResultCard key={`${card.label}-${card.suffix}`} {...card} grinder={grinder} />
+                ))}
               </div>
               {brew && showResult && (
                 <div className="mt-1.5 space-y-1.5">
