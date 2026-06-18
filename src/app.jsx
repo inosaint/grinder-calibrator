@@ -445,14 +445,12 @@
     const BREW_GUIDE = [
       { id: 'v60', label: 'V60', recipes: [
         { name: 'Standard', ratio: '1:15–17', steps: [
-          'Rinse filter; preheat dripper and cup, discard rinse water',
-          'Add coffee, start timer — pour 2× weight for bloom, wait 30 s',
+          'Bloom with 2× water, wait 30 s',
           'Pour in slow spirals to 60% of total by 1:00',
           'Finish pouring by 1:30–1:45; target draw-down by 2:30–3:00',
         ]},
         { name: 'Hoffmann', ratio: '1:16.7', steps: [
-          'Rinse filter; place upside-down on cup to pre-heat, discard water',
-          'Add coffee; pour 50g water to bloom for 45 s, swirl gently',
+          'Bloom with 50g water for 45 s, swirl gently',
           'Pour continuously to full weight, aiming for 3:30 total',
           'Swirl finished brew in server before pouring',
         ]},
@@ -473,8 +471,7 @@
       ]},
       { id: 'chemex', label: 'Chemex', recipes: [
         { name: 'Standard', ratio: '1:15–17', steps: [
-          'Fold and rinse Chemex filter (3-layer side toward spout); discard rinse water',
-          'Add coffee; bloom with 2× weight for 45 s',
+          'Bloom with 2× water for 45 s',
           'Pour in slow spirals across 3–4 pours; finish by 4:00–4:30',
           'Let drain fully — do not stir or swirl',
         ]},
@@ -1520,9 +1517,9 @@
             </div>
           </div>
 
-          {/* Prep method */}
+          {/* Brewer */}
           <div>
-            <div className="text-[9px] tracking-[0.08em] uppercase text-stone-500 mb-2" style={{ fontFamily: '"DM Mono", monospace' }}>Prep method</div>
+            <div className="text-[9px] tracking-[0.08em] uppercase text-stone-500 mb-2" style={{ fontFamily: '"DM Mono", monospace' }}>Brewer</div>
             <div className="-mx-1 overflow-x-auto">
               <div className="flex gap-1.5 px-1">
                 {BREW_GUIDE.map(b => (
