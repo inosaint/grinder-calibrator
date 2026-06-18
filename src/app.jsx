@@ -311,6 +311,36 @@
         accentColor: '#c47a5a',
         dialNotation: 'numbered',
       },
+      mhw_blade_r3: {
+        id: 'mhw_blade_r3',
+        name: 'MHW-3BOMBER',
+        model: 'Blade R3',
+        subtitle: 'Blade R3 · Rapidity-3 48mm',
+        minClick: 0,
+        maxClick: 180,
+        // HCG publishes 165-1180 µm across 180 clicks. MHW's 16 µm/click
+        // figure is burr travel; the effective particle-size step back-fits to
+        // (1180 - 165) / 180 = 5.6 µm/click.
+        micronsPerClick: 5.6,
+        zeroOffset: 165,
+        majorTick: 60,
+        clicksPerRotation: 60,
+        // HCG notation uses rotation + number + tick, e.g. 1+10.3. A rotation
+        // is 60 clicks, with 12 numbered positions and 5 ticks per number.
+        clicksPerNumber: 5,
+        accentColor: '#c8a878',
+        dialNotation: 'numbered',
+        // HCG Blade R3 settings converted to absolute clicks:
+        // 0.3-7.3, 7-1+5.2, 5.3-2+4, 8.2-1+6.4, 1+6.4-3+0, 1+10.3-3+0.
+        methodOverrides: {
+          espresso: [3, 38],
+          moka:     [35, 87],
+          aeropress:[28, 140],
+          v60:      [42, 94],
+          french:   [94, 180],
+          cold:     [113, 180],
+        },
+      },
       baratza_encore: {
         id: 'baratza_encore',
         name: 'Baratza',
@@ -342,14 +372,15 @@
         return `${r}.${String(rem).padStart(2, '0')}`;
       }
       if (grinder.dialNotation === 'numbered') {
-        return `${Math.floor(click / 10)}.${click % 10}`;
+        const mt = grinder.majorTick || 10;
+        return `${Math.floor(click / mt)}.${click % mt}`;
       }
       return String(click).padStart(2, '0');
     }
 
     // Returns [lo, hi] click range for a method on a grinder, or null if
     // the method is excluded or its micron range falls outside the grinder.
-    // External-dial grinders (S3, ZP6, K-Ultra) carry methodOverrides that
+    // External-dial grinders (S3, ZP6, K-Ultra, Blade R3) carry methodOverrides that
     // win over the linear µm-derived range — burr geometry breaks linearity
     // and we display whatever HCG/manufacturer says the dial reads.
     function getMethodClickRange(grinder, methodId) {
@@ -939,7 +970,8 @@
                     return <>{r}{dot}{String(rem).padStart(2, '0')}</>;
                   }
                   if (grinder.dialNotation === 'numbered') {
-                    return <>{Math.floor(click / 10)}{dot}{click % 10}</>;
+                    const mt = grinder.majorTick || 10;
+                    return <>{Math.floor(click / mt)}{dot}{click % mt}</>;
                   }
                   return String(click).padStart(2, '0');
                 })()}

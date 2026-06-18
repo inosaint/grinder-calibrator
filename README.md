@@ -21,6 +21,7 @@ A browser-based tool for specialty coffee grinders with two modes:
 | 1Zpresso K-Ultra | 7.6 µm/click (back-fit from HCG; manufacturer cites 20), ~40 µm factory zero offset, 0–100 clicks | [Research](grinder-research/k-ultra.md) |
 | KINGrinder K6 | 8.5 µm/click (back-fit from HCG; manufacturer cites 16), ~40 µm factory zero offset, 0–180 clicks, R.CC dial notation | [Research](grinder-research/k6.md) |
 | 1Zpresso Q Air | 12.5 µm/click (back-fit from HCG; manufacturer cites 25), 0–120 clicks, R.N.C dial notation | [Research](grinder-research/q-air.md) |
+| MHW-3BOMBER Blade R3 | 5.6 µm/click (back-fit from HCG; manufacturer cites 16 µm burr travel), 165 µm factory zero offset, 0–180 clicks, R.N.T dial notation | [Research](grinder-research/mhw-blade-r3.md) |
 | Baratza Encore | 26 µm/click + 270 µm zero offset (back-fit from HCG), 0–40 settings, 40 mm M3 conical; electric, not ESP | [Research](grinder-research/baratza-encore.md) |
 
 ## How the mapping works
