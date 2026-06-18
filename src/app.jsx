@@ -1567,6 +1567,21 @@
 
       return (
         <div className="space-y-4">
+          {/* Brewer */}
+          <div>
+            <div className="text-[9px] tracking-[0.08em] uppercase text-stone-500 mb-2" style={{ fontFamily: '"DM Mono", monospace' }}>Brewer</div>
+            <div className="-mx-1 overflow-x-auto">
+              <div className="flex gap-1.5 px-1">
+                {BREW_GUIDE.map(b => (
+                  <Pill key={b.id} label={b.label} active={brewMethod === b.id} onClick={() => {
+                    setBrewMethod(brewMethod === b.id ? null : b.id);
+                    posthog.capture('dialer_option_selected', { type: 'brew_method', value: b.id, label: b.label });
+                  }} />
+                ))}
+              </div>
+            </div>
+          </div>
+
           {/* Process */}
           <div>
             <div className="text-[9px] tracking-[0.08em] uppercase text-stone-500 mb-2" style={{ fontFamily: '"DM Mono", monospace' }}>Processing</div>
@@ -1576,6 +1591,16 @@
                   <Pill key={p.id} label={p.label} active={process === p.id} onClick={() => { setProcess(p.id); posthog.capture('dialer_option_selected', { type: 'process', value: p.id, label: p.label }); }} />
                 ))}
               </div>
+            </div>
+          </div>
+
+          {/* Altitude */}
+          <div>
+            <div className="text-[9px] tracking-[0.08em] uppercase text-stone-500 mb-2" style={{ fontFamily: '"DM Mono", monospace' }}>Altitude</div>
+            <div className="flex gap-1.5">
+              {[['low','Low'],['high','High'],['unknown','Not listed']].map(([id, lbl]) => (
+                <Pill key={id} label={lbl} active={altitude === id} onClick={() => { setAlt(id); posthog.capture('dialer_option_selected', { type: 'altitude', value: id, label: lbl }); }} />
+              ))}
             </div>
           </div>
 
@@ -1589,31 +1614,6 @@
                   posthog.capture('dialer_option_selected', { type: 'roast_level', value: id, label: lbl });
                 }} />
               ))}
-            </div>
-          </div>
-
-          {/* Altitude */}
-          <div>
-            <div className="text-[9px] tracking-[0.08em] uppercase text-stone-500 mb-2" style={{ fontFamily: '"DM Mono", monospace' }}>Altitude</div>
-            <div className="flex gap-1.5">
-              {[['high','High (>1400m)'],['low','Low (<1400m)'],['unknown','Not listed']].map(([id, lbl]) => (
-                <Pill key={id} label={lbl} active={altitude === id} onClick={() => { setAlt(id); posthog.capture('dialer_option_selected', { type: 'altitude', value: id, label: lbl }); }} />
-              ))}
-            </div>
-          </div>
-
-          {/* Brewer */}
-          <div>
-            <div className="text-[9px] tracking-[0.08em] uppercase text-stone-500 mb-2" style={{ fontFamily: '"DM Mono", monospace' }}>Brewer</div>
-            <div className="-mx-1 overflow-x-auto">
-              <div className="flex gap-1.5 px-1">
-                {BREW_GUIDE.map(b => (
-                  <Pill key={b.id} label={b.label} active={brewMethod === b.id} onClick={() => {
-                    setBrewMethod(brewMethod === b.id ? null : b.id);
-                    posthog.capture('dialer_option_selected', { type: 'brew_method', value: b.id, label: b.label });
-                  }} />
-                ))}
-              </div>
             </div>
           </div>
 
