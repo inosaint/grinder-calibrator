@@ -522,19 +522,24 @@
       ]},
     ];
 
-    function deriveDensity(roast, altitude) {
-      const highSignals = (roast === 'filter' ? 1 : 0) + (altitude === 'high' ? 1 : 0);
-      const lowSignals  = (roast === 'espresso' ? 1 : 0) + (altitude === 'low' ? 1 : 0);
-      if (highSignals > lowSignals) return 'high';
-      if (lowSignals > highSignals) return 'low';
-      return 'both';
-    }
-
     function dialerMicrons(rec, brewMethodId) {
       if (!brewMethodId || !DIALER_METHOD_RANGES[brewMethodId] || !rec.pos) return rec.um;
       const [lo, hi] = DIALER_METHOD_RANGES[brewMethodId];
       const span = hi - lo;
       return [Math.round(lo + rec.pos[0] * span), Math.round(lo + rec.pos[1] * span)];
+    }
+
+    function normalizeRoastLevel(value) {
+      return ['light', 'medium', 'dark', 'unknown'].includes(value) ? value : null;
+    }
+
+    function deriveProfileDensity(roastLevel, altitude) {
+      const highSignals = (roastLevel === 'light' ? 1 : 0) + (altitude === 'high' ? 1 : 0);
+      const lowSignals = (roastLevel === 'dark' ? 1 : 0) + (altitude === 'low' ? 1 : 0);
+      if (highSignals > lowSignals) return 'high';
+      if (lowSignals > highSignals) return 'low';
+      if (highSignals || lowSignals) return 'both';
+      return null;
     }
 
     // ========== AUDIO ENGINE ==========
@@ -1091,7 +1096,7 @@
       if (!m) return null;
       return {
         process: m[1],
-        roast: m[2] === 'any' ? null : m[2],
+        roast: normalizeRoastLevel(m[2]),
         altitude: m[3] === 'any' ? null : m[3],
         brewMethod: m[4] === 'none' ? null : m[4],
         grinderId: m[5] === 'none' ? null : m[5],
@@ -1124,18 +1129,30 @@
         setActiveStep(prev => prev === i ? null : i);
       }
 
+      function playRecipe() {
+        const firstOpen = selectedRecipe.steps.findIndex((_, i) => !doneSteps.has(i));
+        setActiveStep(firstOpen === -1 ? 0 : firstOpen);
+      }
+
+      function pauseRecipe() {
+        setActiveStep(null);
+      }
+
       function resetStep(i) {
         if (activeStep === i) setActiveStep(null);
         setStepElapsed(e => e.map((v, j) => j === i ? 0 : v));
       }
 
       function toggleDone(i) {
-        if (activeStep === i) setActiveStep(null);
-        setDoneSteps(prev => {
-          const next = new Set(prev);
-          if (next.has(i)) next.delete(i); else next.add(i);
-          return next;
-        });
+        const next = new Set(doneSteps);
+        const markingDone = !next.has(i);
+        if (markingDone) next.add(i);
+        else next.delete(i);
+        setDoneSteps(next);
+        if (markingDone && activeStep === i) {
+          const nextStep = selectedRecipe.steps.findIndex((_, j) => j > i && !next.has(j));
+          setActiveStep(nextStep === -1 ? null : nextStep);
+        }
       }
 
       function handleShare() {
@@ -1300,6 +1317,27 @@
               );
             })}
           </div>
+
+          <div className="sticky bottom-3 z-10">
+            <button
+              onClick={activeStep === null ? playRecipe : pauseRecipe}
+              className="w-full px-3 py-3 rounded-md flex items-center justify-center gap-2 transition-all"
+              style={{
+                background: activeStep === null
+                  ? 'linear-gradient(180deg, #1a2a1a 0%, #101810 100%)'
+                  : 'linear-gradient(180deg, #2a2520 0%, #1a1510 100%)',
+                border: activeStep === null ? '1px solid #2a5030' : '1px solid #0a0908',
+                color: activeStep === null ? '#9bb086' : '#c8c0b0',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
+                ...monoStyle,
+              }}
+            >
+              {activeStep === null ? <PlayIcon size={10} /> : <PauseIcon size={10} />}
+              <span className="text-[10px] tracking-[0.08em] uppercase">
+                {activeStep === null ? 'Play recipe' : `Step ${activeStep + 1} running`}
+              </span>
+            </button>
+          </div>
         </div>
       );
     }
@@ -1307,7 +1345,7 @@
     // ========== BEAN GUIDE ==========
     function BeanGuide() {
       const [process, setProcess] = useState(() => parseDialerHash()?.process || null);
-      const [roast, setRoast]     = useState(() => parseDialerHash()?.roast || null);
+      const [roastLevel, setRoastLevel] = useState(() => parseDialerHash()?.roast || null);
       const [altitude, setAlt]    = useState(() => parseDialerHash()?.altitude || null);
       const [brewMethod, setBrewMethod] = useState(() => parseDialerHash()?.brewMethod || null);
       const [grinderId, setGrinderId] = useState(() => {
@@ -1316,7 +1354,7 @@
       });
       const grinder = grinderId ? GRINDERS[grinderId] : null;
 
-      const density = (roast !== null && altitude !== null) ? deriveDensity(roast, altitude) : null;
+      const density = deriveProfileDensity(roastLevel, altitude);
       const guide   = process ? PROCESSING_GUIDE.find(p => p.id === process) : null;
       const brew = brewMethod ? BREW_GUIDE.find(b => b.id === brewMethod) : null;
 
@@ -1368,7 +1406,7 @@
         if (!h?.recipeName || !h.process) return null;
         const g = PROCESSING_GUIDE.find(p => p.id === h.process);
         if (!g) return null;
-        const d = (h.roast !== null && h.altitude !== null) ? deriveDensity(h.roast, h.altitude) : null;
+        const d = deriveProfileDensity(h.roast, h.altitude);
         const rec = d ? g[d === 'both' ? 'low' : d] : brewerRec(g, h.brewMethod);
         if (!rec) return null;
         const um = dialerMicrons(rec, h.brewMethod);
@@ -1406,18 +1444,18 @@
           }, {});
           posthog.capture('dialer_result_shown', {
             process,
-            roast,
+            roast_level: roastLevel,
             altitude,
             grinder_id: grinderId,
             grinder_name: grinder ? `${grinder.name} ${grinder.model}`.trim() : null,
             density: density || 'brewer',
-            combo: `${process}·${roast || 'any'}·${altitude || 'any'}`,
+            combo: `${process}·${roastLevel || 'any'}·${altitude || 'any'}`,
             suggestion,
             brew_method: brewMethod,
           });
         }, 800);
         return () => clearTimeout(t);
-      }, [process, roast, altitude, grinderId, brewMethod, density]);
+      }, [process, roastLevel, altitude, grinderId, brewMethod, density]);
 
       const pillBase = {
         fontFamily: '"DM Mono", monospace',
@@ -1504,7 +1542,7 @@
         setActiveRecipe(r);
         setWorkflowActive(true);
         const slug = recipeSlug(r);
-        window.history.replaceState(null, '', `#d/${process}/${roast || 'any'}/${altitude || 'any'}/${brewMethod || 'none'}/${grinderId || 'none'}/${slug}`);
+        window.history.replaceState(null, '', `#d/${process}/${roastLevel || 'any'}/${altitude || 'any'}/${brewMethod || 'none'}/${grinderId || 'none'}/${slug}`);
         posthog.capture('dialer_option_selected', { type: 'recipe', value: slug, label: r.name });
       }
 
@@ -1541,12 +1579,15 @@
             </div>
           </div>
 
-          {/* Roast */}
+          {/* Roast level */}
           <div>
-            <div className="text-[9px] tracking-[0.08em] uppercase text-stone-500 mb-2" style={{ fontFamily: '"DM Mono", monospace' }}>Roast profile</div>
+            <div className="text-[9px] tracking-[0.08em] uppercase text-stone-500 mb-2" style={{ fontFamily: '"DM Mono", monospace' }}>Roast level</div>
             <div className="flex gap-1.5">
-              {[['filter','Filter / Omni'],['espresso','Espresso'],['unknown','Not listed']].map(([id, lbl]) => (
-                <Pill key={id} label={lbl} active={roast === id} onClick={() => { setRoast(id); posthog.capture('dialer_option_selected', { type: 'roast', value: id, label: lbl }); }} />
+              {[['light','Light'],['medium','Medium'],['dark','Dark'],['unknown','Not listed']].map(([id, lbl]) => (
+                <Pill key={id} label={lbl} active={roastLevel === id} onClick={() => {
+                  setRoastLevel(id);
+                  posthog.capture('dialer_option_selected', { type: 'roast_level', value: id, label: lbl });
+                }} />
               ))}
             </div>
           </div>
