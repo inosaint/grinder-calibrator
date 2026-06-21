@@ -1339,7 +1339,6 @@
     // ========== BEAN GUIDE ==========
     function BeanGuide() {
       const [process, setProcess] = useState(() => parseDialerHash()?.process || null);
-      const [roastLevel, setRoastLevel] = useState(() => parseDialerHash()?.roast || null);
       const [altitude, setAlt]    = useState(() => parseDialerHash()?.altitude || null);
       const [brewMethod, setBrewMethod] = useState(() => parseDialerHash()?.brewMethod || null);
       const [grinderId, setGrinderId] = useState(() => {
@@ -1438,18 +1437,17 @@
           }, {});
           posthog.capture('dialer_result_shown', {
             process,
-            roast_level: roastLevel,
             altitude,
             grinder_id: grinderId,
             grinder_name: grinder ? `${grinder.name} ${grinder.model}`.trim() : null,
             density: density || 'brewer',
-            combo: `${process}·${roastLevel || 'any'}·${altitude || 'any'}`,
+            combo: `${process}·${altitude || 'any'}`,
             suggestion,
             brew_method: brewMethod,
           });
         }, 800);
         return () => clearTimeout(t);
-      }, [process, roastLevel, altitude, grinderId, brewMethod, density]);
+      }, [process, altitude, grinderId, brewMethod, density]);
 
       const pillBase = {
         fontFamily: '"DM Mono", monospace',
@@ -1479,102 +1477,6 @@
           >
             {label}
           </button>
-        );
-      }
-
-      function RoastLevelSlider() {
-        const labels = ['Light', 'Medium', 'Dark'];
-        const value = roastLevel === 'light' ? 0 : roastLevel === 'medium' ? 50 : roastLevel === 'dark' ? 100 : Number(roastLevel);
-        const sliderValue = Number.isFinite(value) ? Math.max(0, Math.min(100, value)) : 50;
-        const active = roastLevel !== null;
-        const tunedLabel = sliderValue < 38 ? 'Light' : sliderValue > 62 ? 'Dark' : 'Medium';
-
-        return (
-          <div
-            className="px-3 py-3 rounded-md space-y-2"
-            style={{
-              background: 'linear-gradient(180deg, #1f1c1a 0%, #14110f 100%)',
-              border: active ? '1px solid #5a4530' : '1px solid #0a0908',
-              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 1px 2px rgba(0,0,0,0.5)',
-            }}
-          >
-            <div className="flex items-baseline justify-between">
-              <div className="text-[8px] tracking-[0.08em] uppercase" style={{ color: '#6a625a', fontFamily: '"DM Mono", monospace' }}>
-                Tuning
-              </div>
-              <div className="text-[10px] tracking-[0.08em] uppercase" style={{ color: '#c89d6a', fontFamily: '"DM Mono", monospace' }}>
-                {tunedLabel}
-              </div>
-            </div>
-            <div className="relative pt-1">
-              <div
-                className="absolute left-0 right-0 top-[13px] h-px"
-                style={{ background: 'linear-gradient(90deg, #7ab4d0 0%, #c89d6a 50%, #a07850 100%)', opacity: 0.75 }}
-              />
-              {[0, 25, 50, 75, 100].map((tick) => (
-                <div
-                  key={tick}
-                  className="absolute top-[9px]"
-                  style={{
-                    left: `${tick}%`,
-                    width: tick === 0 || tick === 50 || tick === 100 ? 1.5 : 1,
-                    height: tick === 0 || tick === 50 || tick === 100 ? 9 : 6,
-                    background: tick === 0 || tick === 50 || tick === 100 ? '#8a8178' : '#4a423c',
-                    transform: 'translateX(-50%)',
-                  }}
-                />
-              ))}
-              <div
-                className="absolute top-[7px] w-3 h-3 rounded-full"
-                style={{
-                  left: `${sliderValue}%`,
-                  transform: 'translateX(-50%)',
-                  background: '#c89d6a',
-                  boxShadow: '0 0 8px rgba(200,157,106,0.55), 0 1px 2px rgba(0,0,0,0.8)',
-                  pointerEvents: 'none',
-                }}
-              />
-              <input
-                type="range"
-                min="0"
-              max="100"
-              step="1"
-              value={sliderValue}
-              onChange={(e) => {
-                const raw = Number(e.target.value);
-                const next = String(raw);
-                setRoastLevel(next);
-                posthog.capture('dialer_option_selected', { type: 'roast_level', value: next, label: raw < 38 ? 'Light' : raw > 62 ? 'Dark' : 'Medium' });
-                }}
-                className="relative w-full opacity-0 cursor-pointer"
-                style={{ colorScheme: 'dark' }}
-              />
-            </div>
-            <div className="grid grid-cols-3 mt-1 text-[9px] tracking-[0.08em] uppercase" style={{ fontFamily: '"DM Mono", monospace' }}>
-              {labels.map((label, i) => (
-                <button
-                  key={label}
-                  onClick={() => {
-                    const next = String(i * 50);
-                    setRoastLevel(next);
-                    posthog.capture('dialer_option_selected', { type: 'roast_level', value: next, label });
-                  }}
-                  className="uppercase"
-                  style={{
-                    color: Math.abs(sliderValue - i * 50) <= 8 ? '#c89d6a' : '#6a625a',
-                    textAlign: i === 0 ? 'left' : i === 2 ? 'right' : 'center',
-                    background: 'none',
-                    border: 'none',
-                    padding: 0,
-                    fontFamily: '"DM Mono", monospace',
-                    letterSpacing: '0.08em',
-                  }}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
         );
       }
 
@@ -1632,7 +1534,7 @@
         setActiveRecipe(r);
         setWorkflowActive(true);
         const slug = recipeSlug(r);
-        window.history.replaceState(null, '', `#d/${process}/${roastLevel || 'any'}/${altitude || 'any'}/${brewMethod || 'none'}/${grinderId || 'none'}/${slug}`);
+        window.history.replaceState(null, '', `#d/${process}/any/${altitude || 'any'}/${brewMethod || 'none'}/${grinderId || 'none'}/${slug}`);
         posthog.capture('dialer_option_selected', { type: 'recipe', value: slug, label: r.name });
       }
 
@@ -1692,12 +1594,6 @@
                 <Pill key={id} label={lbl} active={altitude === id} onClick={() => { setAlt(id); posthog.capture('dialer_option_selected', { type: 'altitude', value: id, label: lbl }); }} />
               ))}
             </div>
-          </div>
-
-          {/* Roast level */}
-          <div>
-            <div className="text-[9px] tracking-[0.08em] uppercase text-stone-500 mb-2" style={{ fontFamily: '"DM Mono", monospace' }}>Roast level</div>
-            <RoastLevelSlider />
           </div>
 
           {/* Grinder */}
