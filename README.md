@@ -23,6 +23,8 @@ A browser-based tool for specialty coffee grinders with two modes:
 | 1Zpresso Q Air | 12.5 µm/click (back-fit from HCG; manufacturer cites 25), 0–120 clicks, R.N.C dial notation | [Research](grinder-research/q-air.md) |
 | MHW-3BOMBER Blade R3 | 5.6 µm/click (back-fit from HCG; manufacturer cites 16 µm burr travel), 165 µm factory zero offset, 0–180 clicks, R.N.T dial notation | [Research](grinder-research/mhw-blade-r3.md) |
 | Baratza Encore | 26 µm/click + 270 µm zero offset (back-fit from HCG), 0–40 settings, 40 mm M3 conical; electric, not ESP | [Research](grinder-research/baratza-encore.md) |
+| Fiorenzato Pietro B-Modal | 7.5 µm/click + 170 µm zero offset (back-fit from HCG; manufacturer cites 15), 0–100 clicks, 58 mm vertical flat MultiPurpose burrs, N.C dial notation | [Research](grinder-research/pietro-b-modal.md) |
+| Fiorenzato Pietro M-Modal | 7.5 µm/click + 230 µm zero offset (back-fit from HCG; manufacturer cites 15), 0–100 clicks, 58 mm vertical flat ProBrewing burrs, N.C dial notation | [Research](grinder-research/pietro-m-modal.md) |
 
 ## How the mapping works
 

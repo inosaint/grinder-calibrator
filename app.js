@@ -50,7 +50,17 @@ methodOverrides:{espresso:[3,38],moka:[35,87],aeropress:[28,140],v60:[42,94],fre
 // baseline burr gap (HCG floor ~250 µm), so a zeroOffset=0 model fails. Step
 // size is non-uniform in hardware (~90 µm/step at the coarse end); this linear
 // fit is the best single-line approximation of HCG's bands.
-micronsPerClick:26,zeroOffset:270,majorTick:5,accentColor:"#7a8a94"}};function formatClickString(grinder,click){if(grinder.clicksPerRotation){var r=Math.floor(click/grinder.clicksPerRotation);var rem=click%grinder.clicksPerRotation;if(grinder.clicksPerNumber){var n=Math.floor(rem/grinder.clicksPerNumber);var c=rem%grinder.clicksPerNumber;return"".concat(r,".").concat(n,".").concat(c)}return"".concat(r,".").concat(String(rem).padStart(2,"0"))}if(grinder.dialNotation==="numbered"){var mt=grinder.majorTick||10;return"".concat(Math.floor(click/mt),".").concat(click%mt)}return String(click).padStart(2,"0")}// Returns [lo, hi] click range for a method on a grinder, or null if
+micronsPerClick:26,zeroOffset:270,majorTick:5,accentColor:"#7a8a94"},pietro_b_modal:{id:"pietro_b_modal",name:"Fiorenzato Pietro",model:"B-Modal",subtitle:"B-Modal \xB7 58mm flat",minClick:0,maxClick:100,// HCG publishes 170-920 µm across 0-10.0. Pietro's official
+// 15 µm/click figure is treated as hardware travel; HCG back-fits
+// the effective app scale to 7.5 µm/click.
+micronsPerClick:7.5,zeroOffset:170,majorTick:10,accentColor:"#8f8a63",dialNotation:"numbered",// HCG Pietro B-Modal settings converted from N.C notation to clicks.
+// Chemex is not published by HCG, so it stays micron-derived.
+methodOverrides:{espresso:[2,28],moka:[26,65],aeropress:[20,100],v60:[31,70],french:[70,100],cold:[84,100]}},pietro_m_modal:{id:"pietro_m_modal",name:"Fiorenzato Pietro",model:"M-Modal",subtitle:"M-Modal \xB7 58mm flat",minClick:0,maxClick:100,// HCG publishes 230-980 µm across 0-10.0. Pietro's official
+// 15 µm/click figure is treated as hardware travel; HCG back-fits
+// the effective app scale to 7.5 µm/click.
+micronsPerClick:7.5,zeroOffset:230,majorTick:10,accentColor:"#6f7d7a",dialNotation:"numbered",// HCG Pietro M-Modal settings converted from N.C notation to clicks.
+// Chemex is not published by HCG, so it stays micron-derived.
+methodOverrides:{espresso:[0,20],moka:[18,57],aeropress:[12,97],v60:[23,62],french:[62,100],cold:[76,100]}}};function formatClickString(grinder,click){if(grinder.clicksPerRotation){var r=Math.floor(click/grinder.clicksPerRotation);var rem=click%grinder.clicksPerRotation;if(grinder.clicksPerNumber){var n=Math.floor(rem/grinder.clicksPerNumber);var c=rem%grinder.clicksPerNumber;return"".concat(r,".").concat(n,".").concat(c)}return"".concat(r,".").concat(String(rem).padStart(2,"0"))}if(grinder.dialNotation==="numbered"){var mt=grinder.majorTick||10;return"".concat(Math.floor(click/mt),".").concat(click%mt)}return String(click).padStart(2,"0")}// Returns [lo, hi] click range for a method on a grinder, or null if
 // the method is excluded or its micron range falls outside the grinder.
 // External-dial grinders (S3, ZP6, K-Ultra, Blade R3) carry methodOverrides that
 // win over the linear µm-derived range — burr geometry breaks linearity

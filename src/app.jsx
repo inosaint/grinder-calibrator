@@ -358,6 +358,58 @@
         majorTick: 5,
         accentColor: '#7a8a94',
       },
+      pietro_b_modal: {
+        id: 'pietro_b_modal',
+        name: 'Fiorenzato Pietro',
+        model: 'B-Modal',
+        subtitle: 'B-Modal · 58mm flat',
+        minClick: 0,
+        maxClick: 100,
+        // HCG publishes 170-920 µm across 0-10.0. Pietro's official
+        // 15 µm/click figure is treated as hardware travel; HCG back-fits
+        // the effective app scale to 7.5 µm/click.
+        micronsPerClick: 7.5,
+        zeroOffset: 170,
+        majorTick: 10,
+        accentColor: '#8f8a63',
+        dialNotation: 'numbered',
+        // HCG Pietro B-Modal settings converted from N.C notation to clicks.
+        // Chemex is not published by HCG, so it stays micron-derived.
+        methodOverrides: {
+          espresso: [2, 28],
+          moka:     [26, 65],
+          aeropress:[20, 100],
+          v60:      [31, 70],
+          french:   [70, 100],
+          cold:     [84, 100],
+        },
+      },
+      pietro_m_modal: {
+        id: 'pietro_m_modal',
+        name: 'Fiorenzato Pietro',
+        model: 'M-Modal',
+        subtitle: 'M-Modal · 58mm flat',
+        minClick: 0,
+        maxClick: 100,
+        // HCG publishes 230-980 µm across 0-10.0. Pietro's official
+        // 15 µm/click figure is treated as hardware travel; HCG back-fits
+        // the effective app scale to 7.5 µm/click.
+        micronsPerClick: 7.5,
+        zeroOffset: 230,
+        majorTick: 10,
+        accentColor: '#6f7d7a',
+        dialNotation: 'numbered',
+        // HCG Pietro M-Modal settings converted from N.C notation to clicks.
+        // Chemex is not published by HCG, so it stays micron-derived.
+        methodOverrides: {
+          espresso: [0, 20],
+          moka:     [18, 57],
+          aeropress:[12, 97],
+          v60:      [23, 62],
+          french:   [62, 100],
+          cold:     [76, 100],
+        },
+      },
     };
 
     function formatClickString(grinder, click) {

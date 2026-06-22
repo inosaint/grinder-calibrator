@@ -52,6 +52,7 @@ Dial notation summary: plain integers (C40/C2/C3) → no `dialNotation`; single-
 ## Conventions
 
 - All ranges, configs, and recommendations are HCG-aligned. The README's footer credits HCG; the on-page disclaimer links to it.
+- Do not run browser/UI verification; I will verify UI manually. Use build/unit checks only unless explicitly requested.
 - The C2 entry covers the C2/C2 Max/C2S/C2 Fold (same Standard burrs, mechanism, step). The `variants` field carries that string for the dropdown.
 - Grinder-specific UI disclaimers are gated on `grinder.id === '<id>'` inside the `GrinderDisclaimer` component (see ZP6's espresso/hex-burr note). Don't add new disclaimers without the user explicitly asking.
 - Fonts (DM Mono, Bodoni Moda) are loaded via `<link>` in `<head>`, not via `@import` inside React-rendered styles — Safari ignores the latter.
